@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <assert.h>
 #include <unistd.h>
+#include <stdint.h>
 
 #include "dbuf.h"
 
@@ -20,10 +21,27 @@ _recv(int fd,
   return recv(fd, buf, count, 0);
 }
 
+uint64_t
+dbuf_pack(int fd,
+	  int readf)
+{
+  return fd | (uint64_t)readf << 32;
+}
+
+ssize_t
+dbuf_readp(uint64_t p,
+	   char **rbuf)
+{
+  int fd = (int)p;
+  int readf = (int)(p >> 32);
+
+  return dbuf_read(fd, readf, rbuf);
+}
+
 ssize_t
 dbuf_read(int fd,
-	   char **rbuf,
-	   dbuf_readf_t readf)
+	  dbuf_readf_t readf,
+	  char **rbuf)
 {
   char *buf, *ibuf;
   size_t count;
@@ -54,7 +72,7 @@ dbuf_read(int fd,
 	continue;
       }
 
-      assert(*(ibuf + size) == '\0');
+      *(ibuf + size) = '\0';
 
       *rbuf = buf;
       return size + count / 2;

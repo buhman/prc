@@ -24,6 +24,10 @@ AC_CHECK_FUNCS([epoll_create1])
 
 #
 
+PKG_CHECK_MODULES(GSASL, [libgsasl])
+
+#
+
 AC_CONFIG_FILES([Makefile src/Makefile])
 
 AC_OUTPUT

@@ -1,15 +1,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
+#include <limits.h>
+#include <string.h>
+#include <errno.h>
 
 #include <sys/epoll.h>
+#include <sys/socket.h>
 
 #include "dbuf.h"
+#include "epoll.h"
+#include "sll.h"
+#include "prc.h"
+#include "proto.h"
 
-#define MAX_EVENTS 2
+static sll_t *write_queue;
 
 int
 main(int argc,
@@ -26,58 +33,92 @@ main(int argc,
   } /* ... */
 
   {
-    int mode;
-
-    mode = fcntl(STDIN_FILENO, F_GETFL);
-    if (mode < 0) {
-      perror("fcntl(F_GETFL)");
+    err = epoll_input(efd);
+    if (err < 0) {
+      perror("epoll_input()");
       return EXIT_FAILURE;
     }
 
-    err = fcntl(STDIN_FILENO, F_SETFL, mode | O_NONBLOCK);
+    err = epoll_connect(efd, IRC_HOST, IRC_PORT);
     if (err < 0) {
-      perror("fcntl(F_SETFL)");
+      perror("epoll_connect()");
       return EXIT_FAILURE;
     }
   } /* ... */
 
   {
-    struct epoll_event ev;
+    proto_init_ht();
 
-    ev.data.u32 = DBUF_READ;
-    ev.data.fd = STDIN_FILENO;
-    ev.events = EPOLLIN;
+    write_queue = calloc(1, sizeof(sll_t));
 
-    err = epoll_ctl(efd, EPOLL_CTL_ADD, ev.data.fd, &ev);
-    if (err < 0) {
-      perror("epoll_ctl()");
-      return EXIT_FAILURE;
-    }
-  } /* ... */
+    proto_register(write_queue);
+  }
 
   {
     struct epoll_event *evs, *evi;
+    char *buf;
+    ssize_t size;
     int nfds;
 
     evs = calloc(MAX_EVENTS, sizeof(struct epoll_event));
 
     while (true) {
 
-
-      nfds = epoll_wait(efd, evs, 2, -1);
+      nfds = epoll_wait(efd, evs, MAX_EVENTS, -1);
       if (nfds < 0) {
 	perror("epoll_wait()");
 	return EXIT_FAILURE;
       }
 
-      for (evi = evs; evi < evs + MAX_EVENTS; evi++) {
+      for (evi = evs; evi < evs + nfds; evi++) {
 
+        if (evi->events & EPOLLOUT && (int)evi->data.u64 != STDIN_FILENO) {
+
+	  if (write_queue->head != NULL) {
+
+	    buf = write_queue->head->buf;
+
+	    size = send((int)evi->data.u64, buf, strlen(buf), 0);
+	    if (size < 0) {
+	      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+		fprintf(stderr, "send(): EAGAIN\n");
+		continue;
+	      }
+	      else {
+		perror("send()");
+		return EXIT_FAILURE;
+	      }
+	    }
+	    else if (size != strlen(buf)) {
+	      fprintf(stderr, "s: %zd sl %d\n", size, strlen(buf));
+	      return EXIT_FAILURE;
+	    }
+
+	    sll_pop(write_queue, &buf);
+            printf("C: [%s]\n", buf);
+	    free(buf);
+	  }
+	}
 	if (evi->events & EPOLLIN) {
 
-	  char *buf;
-	  ssize_t size;
-	  size = dbuf_read(evi->data.fd, &buf, evi->data.u32);
-	  return EXIT_SUCCESS;
+	  err = dbuf_readp(evi->data.u64, &buf);
+	  if (err < 0) {
+	    perror("dbuf_readp()");
+	  }
+
+	  {
+	    char *ptr, *ibuf;
+
+	    ibuf = buf;
+
+	    while ((ptr = strchr(ibuf, '\r')) != NULL) {
+	      *ptr = '\0';
+	      proto_process(write_queue, ibuf);
+	      ibuf = ptr + 2;
+	    }
+	  }
+
+	  free(buf);
 	}
       }
     }

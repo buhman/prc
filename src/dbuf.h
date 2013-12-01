@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 #define READ_BUFSIZE 512
 
 typedef ssize_t (*dbuf_read_fptr)(int, void*, size_t);
@@ -16,7 +18,15 @@ _recv(int fd,
       void *buf,
       size_t count);
 
+uint64_t
+dbuf_pack(int fd,
+	  int readf);
+
+ssize_t
+dbuf_readp(uint64_t p,
+	   char **rbuf);
+
 ssize_t
 dbuf_read(int fd,
-	  char **rbuf,
-	  dbuf_readf_t readf);
+	  dbuf_readf_t readf,
+	  char **rbuf);
