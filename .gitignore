@@ -20,10 +20,12 @@
 
 # binary
 prc
+a.out
 
 # automake
 
 Makefile.in
+Makefile
 
 # autoconf
 
@@ -34,3 +36,7 @@ configure
 depcomp
 install-sh
 missing
+
+# dots
+.*
+!/.gitignore

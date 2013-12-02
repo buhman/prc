@@ -7,6 +7,7 @@
 #include "proto.h"
 #include "uthash.h"
 #include "sasl.h"
+#include "facts.h"
 
 static handler_ht_t *hht_head;
 
@@ -15,6 +16,7 @@ static handler_sym_t hst[] = {
   {"PING", hndlr_ping},
   {"AUTHENTICATE", hndlr_auth},
   {"900", hndlr_authed},
+  {"PRIVMSG", hndlr_privmsg},
 };
 
 /* output processing */
@@ -63,6 +65,31 @@ proto_register(sll_t *wq)
 }
 
 /* input processing */
+
+static int
+prefix_parse(char prefix[], ...)
+{
+  va_list ap;
+  char *tok, *sp, **arg;
+  int count;
+
+  va_start(ap, prefix);
+  tok = strtok_r(prefix, ":!@", &sp);
+  while (tok != NULL) {
+
+    arg = va_arg(ap, char**);
+    if (arg == NULL)
+      break;
+
+    count++;
+    *arg = strdup(tok);
+    tok = strtok_r(NULL, ":!@", &sp);
+  }
+
+  va_end(ap);
+
+  return count;
+}
 
 static void
 sc_cap_ack(sll_t *wq, char *tok)
@@ -145,7 +172,54 @@ hndlr_ping(sll_t *wq, char *prefix, char **sp) {
   char *tok;
 
   printf("hndlr_ping()\n");
-  sll_push(wq, msg2("PONG", prefix));
+
+  tok = strtok_r(NULL, "", sp);
+  printf("tok [%s]\n", tok);
+  sll_push(wq, msg2("PONG", tok));
+}
+
+static void
+hndlr_privmsg(sll_t *wq, char *prefix, char **sp) {
+
+  char *tok, *user, *channel;
+
+  printf("hndlr_privmsg()\n");
+
+  prefix_parse(prefix, &user, NULL);
+  if (strcmp(user, "buhman") != 0)
+    return;
+
+  tok = strtok_r(NULL, " ", sp);
+  if (strcmp(tok, "buhmin") == 0) {
+    channel = user;
+  }
+  else {
+    channel = tok;
+  }
+
+  tok = strtok_r(NULL, ":", sp);
+  if (*tok == '`') {
+    char *fact, *pmsg;
+
+    tok++;
+
+    {
+      fact = facts_get(tok);
+
+      if (fact) {
+        pmsg = malloc(strlen(fact) + 2);
+        strcpy(pmsg + 1, fact);
+        *pmsg = ':';
+
+        sll_push(wq, msg2("PRIVMSG", channel, pmsg, NULL));
+        free(fact);
+      }
+      else
+        printf("FACT [%s] not fount\n", tok);
+    }
+  }
+
+  free(user);
 }
 
 void

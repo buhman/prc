@@ -15,6 +15,7 @@
 #include "sll.h"
 #include "prc.h"
 #include "proto.h"
+#include "facts.h"
 
 static sll_t *write_queue;
 
@@ -48,6 +49,12 @@ main(int argc,
 
   {
     proto_init_ht();
+
+    err = facts_init_ht("db");
+    if (err < 0) {
+      fprintf(stderr, "facts_init_ht()\n");
+      return EXIT_FAILURE;
+    }
 
     write_queue = calloc(1, sizeof(sll_t));
 
@@ -106,7 +113,10 @@ main(int argc,
 	    perror("dbuf_readp()");
 	  }
 
-	  {
+          if ((int)evi->data.u64 == STDIN_FILENO) {
+            sll_push(write_queue, buf);
+          }
+	  else {
 	    char *ptr, *ibuf;
 
 	    ibuf = buf;
@@ -116,9 +126,9 @@ main(int argc,
 	      proto_process(write_queue, ibuf);
 	      ibuf = ptr + 2;
 	    }
-	  }
 
-	  free(buf);
+            free(buf);
+	  }
 	}
       }
     }

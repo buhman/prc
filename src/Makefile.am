@@ -8,6 +8,7 @@ prc_SOURCES = \
 	sasl.c sasl.h \
 	dbuf.c dbuf.h \
 	sll.c sll.h \
+	facts.c facts.h \
 	prc.c
 
 prc_LDADD = \
