@@ -17,6 +17,7 @@ static handler_sym_t hst[] = {
   {"AUTHENTICATE", hndlr_auth},
   {"900", hndlr_authed},
   {"PRIVMSG", hndlr_privmsg},
+  {"001", hndlr_welcome},
 };
 
 /* output processing */
@@ -161,6 +162,12 @@ hndlr_auth(sll_t *wq, char *prefix, char **sp) {
 }
 
 static void
+hndlr_welcome(sll_t *wq, char *prefix, char **sp) {
+
+  sll_push(wq, msg("JOIN #Boohbah"));
+}
+
+static void
 hndlr_authed(sll_t *wq, char *prefix, char **sp) {
 
   sll_push(wq, msg("CAP END"));
@@ -218,7 +225,29 @@ hndlr_privmsg(sll_t *wq, char *prefix, char **sp) {
         printf("FACT [%s] not fount\n", tok);
     }
   }
+  else if (*tok == '%') {
+    tok++;
 
+    char *key, *fact;
+
+    key = strtok_r(tok, "`", sp);
+    if (key == NULL) {
+      fprintf(stderr, "FACTADD: no key");
+      goto end;
+    }
+
+    fact = strtok_r(NULL, "", sp);
+    if (fact == NULL) {
+      fprintf(stderr, "FACTADD: no fact");
+      goto end;
+    }
+
+    if (facts_add(key, fact) >= 0) {
+      sll_push(wq, msg2("PRIVMSG", channel, ":[success]", NULL));
+    }
+  }
+
+ end:
   free(user);
 }
 

@@ -9,6 +9,10 @@ struct fact_ht {
   UT_hash_handle hh;
 };
 
+int
+facts_add(char *key,
+          char *fact);
+
 char *
 facts_get(char *key);
 

@@ -48,6 +48,9 @@ hndlr_ping(sll_t *wq, char *prefix, char **sp);
 static void
 hndlr_privmsg(sll_t *wq, char *prefix, char **sp);
 
+static void
+hndlr_welcome(sll_t *wq, char *prefix, char **sp);
+
 void
 proto_init_ht();
 
