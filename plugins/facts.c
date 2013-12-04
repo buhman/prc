@@ -3,12 +3,55 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "dbuf.h"
+#include "prc.h"
+
 #include "facts.h"
-#include "sll.h"
 
 static fact_ht_t *facts_head;
 static char *db_path;
+
+static void
+facts_find_handler(sll_t *wq, char *target, char *tok)
+{
+  char *fact, *pmsg;
+
+  {
+    fact = facts_get(tok);
+
+    if (fact) {
+      pmsg = malloc(strlen(fact) + 2);
+      strcpy(pmsg + 1, fact);
+      *pmsg = ':';
+
+      sll_push(wq, prc_msg("PRIVMSG", target, pmsg, NULL));
+      free(fact);
+      free(pmsg);
+    }
+    else
+      printf("FACT [%s] not found\n", tok);
+  }
+}
+
+static void
+facts_add_handler(sll_t *wq, char *target, char *tok)
+{
+  char *key, *fact, *status, *sp;
+
+  key = strtok_r(tok, "`", &sp);
+  if (key == NULL)
+    fprintf(stderr, "FACTADD: no key");
+
+  fact = strtok_r(NULL, "", &sp);
+  if (fact == NULL)
+    fprintf(stderr, "FACTADD: no fact");
+
+  if (fact != NULL && key != NULL)
+    status = facts_add(key, fact) >= 0 ? ":[success]" : ":[failure]";
+  else
+    status = ":[failure]";
+
+  sll_push(wq, prc_msg("PRIVMSG", target, status, NULL));
+}
 
 int
 facts_add(char *key,
@@ -116,4 +159,19 @@ facts_init_ht(char *path)
   close(dbfd);
 
   return 0;
+}
+
+void
+prc_reg(handler_ht_t **plugin_head)
+{
+  int err;
+
+  err = facts_init_ht("db");
+  if (err < 0) {
+    fprintf(stderr, "facts_init_ht()\n");
+    return;
+  }
+
+  prc_register(plugin_head, "fact_find", facts_find_handler);
+  prc_register(plugin_head, "fact_add", facts_add_handler);
 }

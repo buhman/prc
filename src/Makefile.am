@@ -12,8 +12,6 @@ prc_SOURCES = \
 	epoll.c epoll.h \
 	proto.c proto.h \
 	sasl.c sasl.h \
-	dbuf.c dbuf.h \
-	facts.c facts.h \
 	plugin.c plugin.h \
 	prc.c
 

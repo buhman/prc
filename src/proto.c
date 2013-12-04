@@ -9,26 +9,25 @@
 #include "proto.h"
 #include "uthash.h"
 #include "sasl.h"
-#include "facts.h"
 #include "plugin.h"
 
 static void
-hndlr_authed(sll_t *wq, char *prefix, char **sp);
+hndlr_authed(sll_t *wq, char *prefix, char *sp);
 
 static void
-hndlr_auth(sll_t *wq, char *prefix, char **sp);
+hndlr_auth(sll_t *wq, char *prefix, char *sp);
 
 static void
-hndlr_cap(sll_t *wq, char *prefix, char **sp);
+hndlr_cap(sll_t *wq, char *prefix, char *sp);
 
 static void
-hndlr_ping(sll_t *wq, char *prefix, char **sp);
+hndlr_ping(sll_t *wq, char *prefix, char *sp);
 
 static void
-hndlr_privmsg(sll_t *wq, char *prefix, char **sp);
+hndlr_privmsg(sll_t *wq, char *prefix, char *sp);
 
 static void
-hndlr_welcome(sll_t *wq, char *prefix, char **sp);
+hndlr_welcome(sll_t *wq, char *prefix, char *sp);
 
 static handler_ht_t *proto_head;
 static handler_ht_t *admin_head;
@@ -99,19 +98,19 @@ sc_cap_ack(sll_t *wq, char *tok)
 }
 
 static void
-hndlr_cap(sll_t *wq, char *prefix, char **sp) {
+hndlr_cap(sll_t *wq, char *prefix, char *sp) {
 
   char *tok;
 
   printf("hndlr_cap()\n");
 
   {
-    while ((tok = strtok_r(NULL, " ", sp)) != NULL) {
+    while ((tok = strtok_r(NULL, " ", &sp)) != NULL) {
       if (strcmp(tok, "*") == 0) {
         continue;
       }
       if (strcmp(tok, "ACK") == 0) {
-        tok = strtok_r(NULL, ":", sp);
+        tok = strtok_r(NULL, ":", &sp);
 
         sc_cap_ack(wq, tok);
         break;
@@ -123,14 +122,14 @@ hndlr_cap(sll_t *wq, char *prefix, char **sp) {
 }
 
 static void
-hndlr_auth(sll_t *wq, char *prefix, char **sp) {
+hndlr_auth(sll_t *wq, char *prefix, char *sp) {
 
   char *tok;
 
   printf("hndlr_auth()\n");
 
   {
-    while ((tok = strtok_r(NULL, " ", sp)) != NULL) {
+    while ((tok = strtok_r(NULL, " ", &sp)) != NULL) {
       if (strcmp(tok, "+") == 0) {
         char *cred;
 
@@ -149,33 +148,33 @@ hndlr_auth(sll_t *wq, char *prefix, char **sp) {
 }
 
 static void
-hndlr_welcome(sll_t *wq, char *prefix, char **sp) {
+hndlr_welcome(sll_t *wq, char *prefix, char *sp) {
 
   sll_push(wq, prc_msg("JOIN #Boohbah", NULL));
 }
 
 static void
-hndlr_authed(sll_t *wq, char *prefix, char **sp) {
+hndlr_authed(sll_t *wq, char *prefix, char *sp) {
 
   sll_push(wq, prc_msg("CAP END", NULL));
 }
 
 static void
-hndlr_ping(sll_t *wq, char *prefix, char **sp) {
+hndlr_ping(sll_t *wq, char *prefix, char *sp) {
 
   char *tok;
 
   printf("hndlr_ping()\n");
 
-  tok = strtok_r(NULL, "", sp);
+  tok = strtok_r(NULL, "", &sp);
   printf("tok [%s]\n", tok);
   sll_push(wq, prc_msg("PONG", tok, NULL));
 }
 
 static void
-hndlr_privmsg(sll_t *wq, char *prefix, char **sp) {
+hndlr_privmsg(sll_t *wq, char *prefix, char *sp) {
 
-  char *tok, *user, *channel;
+  char *tok, *user, *target;
   char cmd;
 
   printf("hndlr_privmsg()\n");
@@ -184,70 +183,39 @@ hndlr_privmsg(sll_t *wq, char *prefix, char **sp) {
   if (strcmp(user, "buhman") != 0)
     return;
 
-  tok = strtok_r(NULL, " ", sp);
+  tok = strtok_r(NULL, " ", &sp);
   if (strcmp(tok, "buhmin") == 0) {
-    channel = user;
+    target = user;
   }
   else {
-    channel = tok;
+    target = tok;
   }
 
-  tok = strtok_r(NULL, ":", sp);
+  tok = strtok_r(NULL, ":", &sp);
   cmd = *tok;
   tok++;
 
   switch(cmd) {
   case '`':
-    {
-      char *fact, *pmsg;
-
-      {
-        fact = facts_get(tok);
-
-        if (fact) {
-          pmsg = malloc(strlen(fact) + 2);
-          strcpy(pmsg + 1, fact);
-          *pmsg = ':';
-
-          sll_push(wq, prc_msg("PRIVMSG", channel, pmsg, NULL));
-          free(fact);
-        }
-        else
-          printf("FACT [%s] not found\n", tok);
-      }
-    }
+    plugin_handler_cmd(wq, "fact_find", target, tok);
     break;
   case '%':
-    {
-      char *key, *fact, *status;
-
-      key = strtok_r(tok, "`", sp);
-      if (key == NULL)
-        fprintf(stderr, "FACTADD: no key");
-
-      fact = strtok_r(NULL, "", sp);
-      if (fact == NULL)
-        fprintf(stderr, "FACTADD: no fact");
-
-      if (fact != NULL && key != NULL)
-        status = facts_add(key, fact) >= 0 ? ":[success]" : ":[failure]";
-      else
-        status = ":[failure]";
-
-      sll_push(wq, prc_msg("PRIVMSG", channel, status, NULL));
-    }
+    plugin_handler_cmd(wq, "fact_add", target, tok);
+    break;
+  case '$':
+    plugin_handler(wq, target, tok);
     break;
   case '#':
     {
       char *key;
       handler_ht_t *item;
 
-      key = strtok_r(tok, " ", sp);
+      key = strtok_r(tok, " ", &sp);
 
       if (key != NULL) {
         HASH_FIND_STR(admin_head, key, item);
         if (item)
-          (item->func)(wq, channel, sp);
+          (item->func)(wq, target, sp);
         else
           fprintf(stderr, "[ADMIN] BAD KEY: [%s]\n", key);
       }
@@ -255,10 +223,6 @@ hndlr_privmsg(sll_t *wq, char *prefix, char **sp) {
         fprintf(stderr, "[ADMIN] NO KEY\n");
       }
     }
-
-    break;
-  case '$':
-    plugin_handler(wq, channel, &tok);
     break;
   }
 
@@ -320,6 +284,6 @@ proto_process(sll_t *wq, char *buf)
     HASH_FIND_STR(proto_head, command, item);
 
     if (item != NULL)
-      (item->func)(wq, prefix, &sp);
+      (item->func)(wq, prefix, sp);
   }
 }

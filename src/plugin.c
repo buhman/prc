@@ -24,7 +24,7 @@ plugin_load(char *name)
 
   dlerror();
 
-  *(void **)(&reg_fp) = dlsym(handle, "pregister");
+  *(void **)(&reg_fp) = dlsym(handle, "prc_reg");
   if ((error = dlerror()) != NULL) {
     fprintf(stderr, "%s\n", error);
     return -1;
@@ -34,42 +34,32 @@ plugin_load(char *name)
 }
 
 int
-plugin_handler(sll_t *wq, char *target, char **tok)
+plugin_handler_cmd(sll_t *wq, char *cmd, char *target, char *tok)
 {
-  char *cmd, *sp;
-  handler_ht_t *item;
+  return prc_lookup2(plugin_head, wq, cmd, target, tok);
+}
 
-  cmd = strtok_r(*tok, " ", &sp);
-  if (cmd != NULL) {
-    HASH_FIND_STR(plugin_head, cmd, item);
-    if (item)
-      (item->func)(wq, target, &sp);
-    else {
-      fprintf(stderr, "[PLUGIN] bad cmd [%s]\n", cmd);
-      return -1;
-    }
-  }
-  else {
-    fprintf(stderr, "[PLUGIN] no cmd\n");
-    return -1;
-  }
-
-  return 0;
+int
+plugin_handler(sll_t *wq, char *target, char *tok)
+{
+  return prc_lookup(plugin_head, wq, target, tok);
 }
 
 static void
-plugin_cmd(sll_t *wq, char *target, char **sp)
+plugin_cmd(sll_t *wq, char *target, char *sp)
 {
   char *action, *pred;
   int err;
 
-  action = strtok_r(NULL, " ", sp);
+  action = strtok_r(NULL, " ", &sp);
   if (action == NULL) {
     fprintf(stderr, "[PLUGIN] no action\n");
     return;
   }
 
-  pred = strtok_r(NULL, " ", sp);
+  printf("action: [%s]\n", action);
+
+  pred = strtok_r(NULL, " ", &sp);
   if (pred == NULL) {
     fprintf(stderr, "[PLUGIN] no pred\n");
     return;
@@ -89,9 +79,5 @@ plugin_cmd(sll_t *wq, char *target, char **sp)
 void
 plugin_init(handler_ht_t **admin_head)
 {
-  handler_ht_t *item;
-  item = malloc(sizeof(handler_ht_t));
-  item->func = plugin_cmd;
-
-  HASH_ADD_KEYPTR(hh, *admin_head, "plugin", strlen("plugin"), item);
+  prc_register(admin_head, "plugin", plugin_cmd);
 }

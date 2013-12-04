@@ -16,7 +16,6 @@
 #include "epoll.h"
 #include "sll.h"
 #include "proto.h"
-#include "facts.h"
 
 static sll_t *write_queue;
 
@@ -50,12 +49,6 @@ main(int argc,
 
   {
     proto_init_ht();
-
-    err = facts_init_ht("db");
-    if (err < 0) {
-      fprintf(stderr, "facts_init_ht()\n");
-      return EXIT_FAILURE;
-    }
 
     write_queue = calloc(1, sizeof(sll_t));
 
