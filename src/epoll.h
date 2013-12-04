@@ -9,8 +9,3 @@ epoll_connect(int efd,
 
 int
 epoll_input(int efd);
-
-static int
-epoll_add(int efd,
-	  int ifd,
-	  dbuf_readf_t readf);

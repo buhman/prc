@@ -97,8 +97,8 @@ main(int argc,
 		return EXIT_FAILURE;
 	      }
 	    }
-	    else if (size != strlen(buf)) {
-	      fprintf(stderr, "s: %zd sl %d\n", size, strlen(buf));
+	    else if ((size_t)size != strlen(buf)) {
+	      fprintf(stderr, "s: %zd sl %zd\n", size, strlen(buf));
 	      return EXIT_FAILURE;
 	    }
 

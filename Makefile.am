@@ -1,4 +1,4 @@
-SUBDIRS = lib src
+SUBDIRS = lib src plugins
 
 ACLOCAL_AMFLAGS = -I m4 --install
 AM_MAKEFLAGS = --no-print-directory

@@ -94,7 +94,6 @@ facts_init_ht(char *path)
   }
 
   {
-    printf("rem %d\n", size - (ibuf - buf));
     while ((ptr = memchr(ibuf, '\n', size - (ibuf - buf))) != NULL) {
 
       *ptr = '\0';

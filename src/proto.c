@@ -12,6 +12,24 @@
 #include "facts.h"
 #include "plugin.h"
 
+static void
+hndlr_authed(sll_t *wq, char *prefix, char **sp);
+
+static void
+hndlr_auth(sll_t *wq, char *prefix, char **sp);
+
+static void
+hndlr_cap(sll_t *wq, char *prefix, char **sp);
+
+static void
+hndlr_ping(sll_t *wq, char *prefix, char **sp);
+
+static void
+hndlr_privmsg(sll_t *wq, char *prefix, char **sp);
+
+static void
+hndlr_welcome(sll_t *wq, char *prefix, char **sp);
+
 static handler_ht_t *proto_head;
 static handler_ht_t *admin_head;
 
@@ -41,7 +59,7 @@ prefix_parse(char prefix[], ...)
 {
   va_list ap;
   char *tok, *sp, **arg;
-  int count;
+  int count = 0;
 
   va_start(ap, prefix);
   tok = strtok_r(prefix, ":!@", &sp);
@@ -240,7 +258,7 @@ hndlr_privmsg(sll_t *wq, char *prefix, char **sp) {
 
     break;
   case '$':
-    plugin_handler(wq, channel, sp);
+    plugin_handler(wq, channel, &tok);
     break;
   }
 
@@ -252,7 +270,6 @@ proto_init_ht() {
 
   handler_sym_t *hsti;
   handler_ht_t *item;
-  char *key;
 
   int hst_size = sizeof(hst) / sizeof(*hst);
 
@@ -263,7 +280,7 @@ proto_init_ht() {
     item = malloc(sizeof(handler_ht_t));
     item->func = hsti->func;
 
-    printf("HHTH [%s] -> [%p]\n", hsti->name, hsti->func);
+    printf("HHTH [%s] -> [%p]\n", hsti->name, *(void**)&hsti->func);
     HASH_ADD_KEYPTR(hh, proto_head, hsti->name, strlen(hsti->name), item);
   }
 

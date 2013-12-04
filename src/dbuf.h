@@ -13,11 +13,6 @@ enum dbuf_readf {
 
 typedef enum dbuf_readf dbuf_readf_t;
 
-static ssize_t
-_recv(int fd,
-      void *buf,
-      size_t count);
-
 uint64_t
 dbuf_pack(int fd,
 	  int readf);

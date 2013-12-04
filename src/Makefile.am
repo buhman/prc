@@ -1,8 +1,9 @@
+include ../common.am
+
 bin_PROGRAMS = prc
 
-AM_CFLAGS = \
-	-pedantic \
-	-D_GNU_SOURCE \
+prc_CFLAGS = \
+	$(AM_CFLAGS) \
 	$(WARNING_CFLAGS) \
 	$(GSASL_CFLAGS) \
 	-I$(top_srcdir)/lib

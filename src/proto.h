@@ -14,24 +14,6 @@ struct handler_sym {
 void
 proto_register(sll_t *wq);
 
-static void
-hndlr_authed(sll_t *wq, char *prefix, char **sp);
-
-static void
-hndlr_auth(sll_t *wq, char *prefix, char **sp);
-
-static void
-hndlr_cap(sll_t *wq, char *prefix, char **sp);
-
-static void
-hndlr_ping(sll_t *wq, char *prefix, char **sp);
-
-static void
-hndlr_privmsg(sll_t *wq, char *prefix, char **sp);
-
-static void
-hndlr_welcome(sll_t *wq, char *prefix, char **sp);
-
 void
 proto_init_ht();
 

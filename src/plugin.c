@@ -24,7 +24,7 @@ plugin_load(char *name)
 
   dlerror();
 
-  *(void **)(&reg_fp) = dlsym(handle, "register");
+  *(void **)(&reg_fp) = dlsym(handle, "pregister");
   if ((error = dlerror()) != NULL) {
     fprintf(stderr, "%s\n", error);
     return -1;
@@ -34,22 +34,27 @@ plugin_load(char *name)
 }
 
 int
-plugin_handler(sll_t *wq, char *target, char **sp)
+plugin_handler(sll_t *wq, char *target, char **tok)
 {
-  char *cmd;
+  char *cmd, *sp;
   handler_ht_t *item;
 
-  cmd = strtok_r(NULL, " ", sp);
+  cmd = strtok_r(*tok, " ", &sp);
   if (cmd != NULL) {
     HASH_FIND_STR(plugin_head, cmd, item);
     if (item)
-      (item->func)(wq, target, sp);
-    else
+      (item->func)(wq, target, &sp);
+    else {
       fprintf(stderr, "[PLUGIN] bad cmd [%s]\n", cmd);
+      return -1;
+    }
   }
   else {
     fprintf(stderr, "[PLUGIN] no cmd\n");
+    return -1;
   }
+
+  return 0;
 }
 
 static void

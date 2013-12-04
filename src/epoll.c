@@ -10,12 +10,17 @@
 
 #include "epoll.h"
 
+static int
+epoll_add(int efd,
+	  int ifd,
+	  dbuf_readf_t readf);
+
 int
 epoll_connect(int efd,
 	      const char *node,
 	      const char *service)
 {
-  int err, sfd;
+  int err, sfd = -1;
   struct addrinfo hints, *result, *rp;
 
   {

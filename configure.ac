@@ -8,13 +8,15 @@ AC_CONFIG_HEADERS([config.h])
 
 #
 
+AC_ENABLE_SHARED
+AC_DISABLE_STATIC
 AM_INIT_AUTOMAKE([1.11 foreign])
 AM_SILENT_RULES([yes])
 AC_PROG_CC_C99
 
 #
 
-LT_INIT([disable-shared])
+LT_INIT([disable-static])
 
 # Check for header files.
 AC_CHECK_HEADERS([stdlib.h stdio.h stdbool.h unistd.h assert.h])
@@ -32,6 +34,6 @@ PKG_CHECK_MODULES(GSASL, [libgsasl])
 
 #
 
-AC_CONFIG_FILES([Makefile src/Makefile lib/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile lib/Makefile plugins/Makefile])
 
 AC_OUTPUT

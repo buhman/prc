@@ -8,6 +8,11 @@
 
 #include "dbuf.h"
 
+static ssize_t
+_recv(int fd,
+      void *buf,
+      size_t count);
+
 static dbuf_read_fptr readf_map[2] = {
   [DBUF_RECV] = _recv,
   [DBUF_READ] = read,
@@ -61,9 +66,9 @@ dbuf_read(int fd,
 	return size;
       }
 
-      assert(size <= count - (ibuf - buf));
+      assert((size_t)size <= count - (ibuf - buf));
 
-      if (size == count - (ibuf - buf)) {
+      if ((size_t)size == count - (ibuf - buf)) {
 
 	buf = realloc(buf, count * 2);
 	ibuf = buf + count;
