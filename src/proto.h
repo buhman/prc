@@ -1,17 +1,8 @@
 #pragma once
 
-#include "uthash.h"
+#include "prc.h"
 
 #define MSG_SIZE 512
-
-typedef void (cmd_handler_t)(sll_t*, char*, char**);
-
-typedef struct handler_ht handler_ht_t;
-
-struct handler_ht {
-  cmd_handler_t *func;
-  UT_hash_handle hh;
-};
 
 typedef struct handler_sym handler_sym_t;
 
@@ -20,18 +11,8 @@ struct handler_sym {
   cmd_handler_t *func;
 };
 
-/* output processing */
-
-static char*
-msg2(char *cmd, ...);
-
-static char *
-msg(char *m);
-
 void
 proto_register(sll_t *wq);
-
-/* input processing */
 
 static void
 hndlr_authed(sll_t *wq, char *prefix, char **sp);

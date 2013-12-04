@@ -3,13 +3,17 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include "prc.h"
+
 #include "sll.h"
 #include "proto.h"
 #include "uthash.h"
 #include "sasl.h"
 #include "facts.h"
+#include "plugin.h"
 
-static handler_ht_t *hht_head;
+static handler_ht_t *proto_head;
+static handler_ht_t *admin_head;
 
 static handler_sym_t hst[] = {
   {"CAP", hndlr_cap},
@@ -22,47 +26,12 @@ static handler_sym_t hst[] = {
 
 /* output processing */
 
-static char*
-msg2(char *cmd, ...)
-{
-  va_list ap;
-  char *arg = cmd;
-
-  char *buf = malloc(MSG_SIZE);
-  char *ibuf = buf;
-
-  va_start(ap, cmd);
-
-  while (arg != NULL) {
-
-    ibuf += sprintf(ibuf, "%s ", arg);
-
-    arg = va_arg(ap, char*);
-  }
-
-  va_end(ap);
-
-  sprintf(ibuf - 1, "\r\n");
-
-  return buf;
-}
-
-static char*
-msg(char *m)
-{
-  char *buf = malloc(MSG_SIZE);
-
-  snprintf(buf, MSG_SIZE, "%s\r\n", m);
-
-  return buf;
-}
-
 void
 proto_register(sll_t *wq)
 {
-  sll_push(wq, msg("CAP REQ :sasl"));
-  sll_push(wq, msg("NICK buhmin"));
-  sll_push(wq, msg("USER buhmin foo bar :buhman's minion"));
+  sll_push(wq, prc_msg("CAP REQ :sasl", NULL));
+  sll_push(wq, prc_msg("NICK buhmin", NULL));
+  sll_push(wq, prc_msg("USER buhmin foo bar :buhman's minion", NULL));
 }
 
 /* input processing */
@@ -103,7 +72,7 @@ sc_cap_ack(sll_t *wq, char *tok)
     printf("stok [%s]\n", tok);
 
     if (strcmp(tok, "sasl") == 0)
-      sll_push(wq, msg("AUTHENTICATE PLAIN"));
+      sll_push(wq, prc_msg("AUTHENTICATE PLAIN", NULL));
     else
       fprintf(stderr, "UHTOK sc_cap_ack: [%s]\n", tok);
 
@@ -151,7 +120,7 @@ hndlr_auth(sll_t *wq, char *prefix, char **sp) {
           return;
 
         printf("CRED: %s\n", cred);
-        sll_push(wq, msg2("AUTHENTICATE", cred));
+        sll_push(wq, prc_msg("AUTHENTICATE", cred, NULL));
         free(cred);
         return;
       }
@@ -164,13 +133,13 @@ hndlr_auth(sll_t *wq, char *prefix, char **sp) {
 static void
 hndlr_welcome(sll_t *wq, char *prefix, char **sp) {
 
-  sll_push(wq, msg("JOIN #Boohbah"));
+  sll_push(wq, prc_msg("JOIN #Boohbah", NULL));
 }
 
 static void
 hndlr_authed(sll_t *wq, char *prefix, char **sp) {
 
-  sll_push(wq, msg("CAP END"));
+  sll_push(wq, prc_msg("CAP END", NULL));
 }
 
 static void
@@ -182,13 +151,14 @@ hndlr_ping(sll_t *wq, char *prefix, char **sp) {
 
   tok = strtok_r(NULL, "", sp);
   printf("tok [%s]\n", tok);
-  sll_push(wq, msg2("PONG", tok));
+  sll_push(wq, prc_msg("PONG", tok, NULL));
 }
 
 static void
 hndlr_privmsg(sll_t *wq, char *prefix, char **sp) {
 
   char *tok, *user, *channel;
+  char cmd;
 
   printf("hndlr_privmsg()\n");
 
@@ -205,49 +175,75 @@ hndlr_privmsg(sll_t *wq, char *prefix, char **sp) {
   }
 
   tok = strtok_r(NULL, ":", sp);
-  if (*tok == '`') {
-    char *fact, *pmsg;
+  cmd = *tok;
+  tok++;
 
-    tok++;
-
+  switch(cmd) {
+  case '`':
     {
-      fact = facts_get(tok);
+      char *fact, *pmsg;
 
-      if (fact) {
-        pmsg = malloc(strlen(fact) + 2);
-        strcpy(pmsg + 1, fact);
-        *pmsg = ':';
+      {
+        fact = facts_get(tok);
 
-        sll_push(wq, msg2("PRIVMSG", channel, pmsg, NULL));
-        free(fact);
+        if (fact) {
+          pmsg = malloc(strlen(fact) + 2);
+          strcpy(pmsg + 1, fact);
+          *pmsg = ':';
+
+          sll_push(wq, prc_msg("PRIVMSG", channel, pmsg, NULL));
+          free(fact);
+        }
+        else
+          printf("FACT [%s] not found\n", tok);
       }
+    }
+    break;
+  case '%':
+    {
+      char *key, *fact, *status;
+
+      key = strtok_r(tok, "`", sp);
+      if (key == NULL)
+        fprintf(stderr, "FACTADD: no key");
+
+      fact = strtok_r(NULL, "", sp);
+      if (fact == NULL)
+        fprintf(stderr, "FACTADD: no fact");
+
+      if (fact != NULL && key != NULL)
+        status = facts_add(key, fact) >= 0 ? ":[success]" : ":[failure]";
       else
-        printf("FACT [%s] not fount\n", tok);
+        status = ":[failure]";
+
+      sll_push(wq, prc_msg("PRIVMSG", channel, status, NULL));
     }
+    break;
+  case '#':
+    {
+      char *key;
+      handler_ht_t *item;
+
+      key = strtok_r(tok, " ", sp);
+
+      if (key != NULL) {
+        HASH_FIND_STR(admin_head, key, item);
+        if (item)
+          (item->func)(wq, channel, sp);
+        else
+          fprintf(stderr, "[ADMIN] BAD KEY: [%s]\n", key);
+      }
+      else {
+        fprintf(stderr, "[ADMIN] NO KEY\n");
+      }
+    }
+
+    break;
+  case '$':
+    plugin_handler(wq, channel, sp);
+    break;
   }
-  else if (*tok == '%') {
-    tok++;
 
-    char *key, *fact;
-
-    key = strtok_r(tok, "`", sp);
-    if (key == NULL) {
-      fprintf(stderr, "FACTADD: no key");
-      goto end;
-    }
-
-    fact = strtok_r(NULL, "", sp);
-    if (fact == NULL) {
-      fprintf(stderr, "FACTADD: no fact");
-      goto end;
-    }
-
-    if (facts_add(key, fact) >= 0) {
-      sll_push(wq, msg2("PRIVMSG", channel, ":[success]", NULL));
-    }
-  }
-
- end:
   free(user);
 }
 
@@ -260,7 +256,7 @@ proto_init_ht() {
 
   int hst_size = sizeof(hst) / sizeof(*hst);
 
-  hht_head = NULL;
+  proto_head = NULL;
 
   for(hsti = hst; hsti < hst + hst_size; hsti++) {
 
@@ -268,8 +264,11 @@ proto_init_ht() {
     item->func = hsti->func;
 
     printf("HHTH [%s] -> [%p]\n", hsti->name, hsti->func);
-    HASH_ADD_KEYPTR(hh, hht_head, hsti->name, strlen(hsti->name), item);
+    HASH_ADD_KEYPTR(hh, proto_head, hsti->name, strlen(hsti->name), item);
   }
+
+  admin_head = NULL;
+  plugin_init(&admin_head);
 }
 
 void
@@ -301,7 +300,7 @@ proto_process(sll_t *wq, char *buf)
   {
     handler_ht_t *item;
 
-    HASH_FIND_STR(hht_head, command, item);
+    HASH_FIND_STR(proto_head, command, item);
 
     if (item != NULL)
       (item->func)(wq, prefix, &sp);

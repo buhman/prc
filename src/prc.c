@@ -10,10 +10,11 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 
+#include "config.h"
+
 #include "dbuf.h"
 #include "epoll.h"
 #include "sll.h"
-#include "prc.h"
 #include "proto.h"
 #include "facts.h"
 

@@ -12,6 +12,10 @@ AM_INIT_AUTOMAKE([1.11 foreign])
 AM_SILENT_RULES([yes])
 AC_PROG_CC_C99
 
+#
+
+LT_INIT([disable-shared])
+
 # Check for header files.
 AC_CHECK_HEADERS([stdlib.h stdio.h stdbool.h unistd.h assert.h])
 AC_CHECK_HEADERS([sys/socket.h sys/epoll.h])
@@ -28,6 +32,6 @@ PKG_CHECK_MODULES(GSASL, [libgsasl])
 
 #
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile lib/Makefile])
 
 AC_OUTPUT
