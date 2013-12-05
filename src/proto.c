@@ -180,7 +180,7 @@ hndlr_privmsg(sll_t *wq, char *prefix, char *sp) {
   printf("hndlr_privmsg()\n");
 
   prefix_parse(prefix, &user, NULL);
-  if (strcmp(user, "buhman") != 0)
+  if (strcmp(user, "buhman") != 0 && strcmp(user, "Boohbah") != 0)
     return;
 
   tok = strtok_r(NULL, " ", &sp);
