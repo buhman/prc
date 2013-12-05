@@ -12,13 +12,13 @@
 
 static int
 epoll_add(int efd,
-	  int ifd,
-	  dbuf_readf_t readf);
+          int ifd,
+          dbuf_readf_t readf);
 
 int
 epoll_connect(int efd,
-	      const char *node,
-	      const char *service)
+              const char *node,
+              const char *service)
 {
   int err, sfd = -1;
   struct addrinfo hints, *result, *rp;
@@ -80,8 +80,8 @@ epoll_input(int efd)
 
 static int
 epoll_add(int efd,
-	  int ifd,
-	  dbuf_readf_t readf)
+          int ifd,
+          dbuf_readf_t readf)
 {
   int err;
   struct epoll_event ev;

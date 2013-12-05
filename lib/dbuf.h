@@ -15,13 +15,13 @@ typedef enum dbuf_readf dbuf_readf_t;
 
 uint64_t
 dbuf_pack(int fd,
-	  int readf);
+          int readf);
 
 ssize_t
 dbuf_readp(uint64_t p,
-	   char **rbuf);
+           char **rbuf);
 
 ssize_t
 dbuf_read(int fd,
-	  dbuf_readf_t readf,
-	  char **rbuf);
+          dbuf_readf_t readf,
+          char **rbuf);

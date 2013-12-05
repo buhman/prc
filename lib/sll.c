@@ -8,7 +8,7 @@
 
 void
 sll_push(sll_t *ol,
-	 char *buf)
+         char *buf)
 {
   sll_link_t *li;
 
@@ -28,7 +28,7 @@ sll_push(sll_t *ol,
 
 void
 sll_pop(sll_t *ol,
-	char **obuf)
+        char **obuf)
 {
   sll_link_t *li;
 

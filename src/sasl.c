@@ -4,8 +4,8 @@
 
 int
 sasl_auth(char *authid,
-	  char *password,
-	  char **obuf)
+          char *password,
+          char **obuf)
 {
   Gsasl *ctx;
   Gsasl_session *session;

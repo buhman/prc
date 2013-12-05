@@ -2,5 +2,5 @@
 
 int
 sasl_auth(char *authid,
-	  char *password,
-	  char **obuf);
+          char *password,
+          char **obuf);

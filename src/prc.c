@@ -67,63 +67,63 @@ main(int argc,
 
       nfds = epoll_wait(efd, evs, MAX_EVENTS, -1);
       if (nfds < 0) {
-	perror("epoll_wait()");
-	return EXIT_FAILURE;
+        perror("epoll_wait()");
+        return EXIT_FAILURE;
       }
 
       for (evi = evs; evi < evs + nfds; evi++) {
 
         if (evi->events & EPOLLOUT && (int)evi->data.u64 != STDIN_FILENO) {
 
-	  if (write_queue->head != NULL) {
+          if (write_queue->head != NULL) {
 
-	    buf = write_queue->head->buf;
+            buf = write_queue->head->buf;
 
-	    size = send((int)evi->data.u64, buf, strlen(buf), 0);
-	    if (size < 0) {
-	      if (errno == EAGAIN || errno == EWOULDBLOCK) {
-		fprintf(stderr, "send(): EAGAIN\n");
-		continue;
-	      }
-	      else {
-		perror("send()");
-		return EXIT_FAILURE;
-	      }
-	    }
-	    else if ((size_t)size != strlen(buf)) {
-	      fprintf(stderr, "s: %zd sl %zd\n", size, strlen(buf));
-	      return EXIT_FAILURE;
-	    }
+            size = send((int)evi->data.u64, buf, strlen(buf), 0);
+            if (size < 0) {
+              if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                fprintf(stderr, "send(): EAGAIN\n");
+                continue;
+              }
+              else {
+                perror("send()");
+                return EXIT_FAILURE;
+              }
+            }
+            else if ((size_t)size != strlen(buf)) {
+              fprintf(stderr, "s: %zd sl %zd\n", size, strlen(buf));
+              return EXIT_FAILURE;
+            }
 
-	    sll_pop(write_queue, &buf);
+            sll_pop(write_queue, &buf);
             printf("C: [%s]\n", buf);
-	    free(buf);
-	  }
-	}
-	if (evi->events & EPOLLIN) {
+            free(buf);
+          }
+        }
+        if (evi->events & EPOLLIN) {
 
-	  err = dbuf_readp(evi->data.u64, &buf);
-	  if (err < 0) {
-	    perror("dbuf_readp()");
-	  }
+          err = dbuf_readp(evi->data.u64, &buf);
+          if (err < 0) {
+            perror("dbuf_readp()");
+          }
 
           if ((int)evi->data.u64 == STDIN_FILENO) {
             sll_push(write_queue, buf);
           }
-	  else {
-	    char *ptr, *ibuf;
+          else {
+            char *ptr, *ibuf;
 
-	    ibuf = buf;
+            ibuf = buf;
 
-	    while ((ptr = strchr(ibuf, '\r')) != NULL) {
-	      *ptr = '\0';
-	      proto_process(write_queue, ibuf);
-	      ibuf = ptr + 2;
-	    }
+            while ((ptr = strchr(ibuf, '\r')) != NULL) {
+              *ptr = '\0';
+              proto_process(write_queue, ibuf);
+              ibuf = ptr + 2;
+            }
 
             free(buf);
-	  }
-	}
+          }
+        }
       }
     }
   } /* ... */

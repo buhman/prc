@@ -28,14 +28,14 @@ _recv(int fd,
 
 uint64_t
 dbuf_pack(int fd,
-	  int readf)
+          int readf)
 {
   return fd | (uint64_t)readf << 32;
 }
 
 ssize_t
 dbuf_readp(uint64_t p,
-	   char **rbuf)
+           char **rbuf)
 {
   int fd = (int)p;
   int readf = (int)(p >> 32);
@@ -45,8 +45,8 @@ dbuf_readp(uint64_t p,
 
 ssize_t
 dbuf_read(int fd,
-	  dbuf_readf_t readf,
-	  char **rbuf)
+          dbuf_readf_t readf,
+          char **rbuf)
 {
   char *buf, *ibuf;
   size_t count;
@@ -62,19 +62,19 @@ dbuf_read(int fd,
 
       size = readf_map[readf](fd, ibuf, count - (ibuf - buf));
       if (size < 0) {
-	perror("read()");
-	return size;
+        perror("read()");
+        return size;
       }
 
       assert((size_t)size <= count - (ibuf - buf));
 
       if ((size_t)size == count - (ibuf - buf)) {
 
-	buf = realloc(buf, count * 2);
-	ibuf = buf + count;
-	count *= 2;
+        buf = realloc(buf, count * 2);
+        ibuf = buf + count;
+        count *= 2;
 
-	continue;
+        continue;
       }
 
       *(ibuf + size) = '\0';
