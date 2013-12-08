@@ -180,8 +180,10 @@ hndlr_privmsg(sll_t *wq, char *prefix, char *sp) {
   printf("hndlr_privmsg()\n");
 
   prefix_parse(prefix, &user, NULL);
-  if (strcmp(user, "buhman") != 0 && strcmp(user, "Boohbah") != 0)
-    return;
+  /*if (strcmp(user, "buhman") != 0 &&
+      strcmp(user, "Boohbah") != 0 &&
+      strcmp(user, "woddf2") != 0)
+      return;*/
 
   tok = strtok_r(NULL, " ", &sp);
   if (strcmp(tok, "buhmin") == 0) {
@@ -196,6 +198,9 @@ hndlr_privmsg(sll_t *wq, char *prefix, char *sp) {
   tok++;
 
   switch(cmd) {
+  case '\001':
+    plugin_handler_cmd(wq, "ctcp", target, tok);
+    break;
   case '`':
     plugin_handler_cmd(wq, "fact_find", target, tok);
     break;

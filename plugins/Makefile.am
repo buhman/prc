@@ -6,10 +6,16 @@ AM_CFLAGS += \
 AM_LIBADD = \
 	$(top_builddir)/lib/libprc.la
 
-lib_LTLIBRARIES = libtime.la libfacts.la
+lib_LTLIBRARIES = \
+	libtime.la \
+	libfacts.la \
+	libctcp.la
 
 libtime_la_SOURCES = \
 	time.c
 
 libfacts_la_SOURCES = \
 	facts.c facts.h
+
+libctcp_la_SOURCES = \
+	ctcp.c
