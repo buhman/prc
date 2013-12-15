@@ -9,11 +9,12 @@ prc_CFLAGS = \
 	-I$(top_srcdir)/lib
 
 prc_SOURCES = \
-	epoll.c epoll.h \
+	event.c event.h \
 	proto.c proto.h \
-	sasl.c sasl.h \
-	plugin.c plugin.h \
 	prc.c
+
+#sasl.c sasl.h
+#plugin.c plugin.h
 
 prc_LDADD = \
 	$(GSASL_LIBS) \

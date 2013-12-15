@@ -8,7 +8,6 @@ AM_LIBADD = \
 
 lib_LTLIBRARIES = \
 	libtime.la \
-	libfacts.la \
 	libctcp.la
 
 libtime_la_SOURCES = \

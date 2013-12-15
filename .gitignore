@@ -27,7 +27,7 @@ a.out
 Makefile.in
 Makefile
 
-# autoconf
+# autocruft
 
 autom4te.cache
 aclocal.m4
@@ -36,6 +36,18 @@ configure
 depcomp
 install-sh
 missing
+common.am
+config.guess
+config.h
+config.h.in
+config.log
+config.status
+config.sub
+db
+libtool
+ltmain.sh
+m4
+stamp-h1
 
 # dots
 .*
