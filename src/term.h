@@ -9,11 +9,19 @@
 
 #include "sll.h"
 
-void
-term_read(int fd, sll_t *wq);
+extern sll_t *term_wq;
 
-void
-term_write(int fd, sll_t *wq);
+int
+term_stdout(int epfd);
+
+int
+term_register(int epfd);
+
+int
+term_read(struct epoll_event *ev);
+
+int
+term_write(struct epoll_event *ev);
 
 int
 term_setup();

@@ -11,6 +11,7 @@ prc_CFLAGS = \
 prc_SOURCES = \
 	event.c event.h \
 	proto.c proto.h \
+	term.c term.h \
 	prc.c
 
 #sasl.c sasl.h

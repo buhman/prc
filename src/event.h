@@ -10,7 +10,8 @@ typedef int (eh_fptr_t)(struct epoll_event*);
 struct event_handler {
   int epfd;
   int fd;
-  eh_fptr_t *func;
+  eh_fptr_t *rf;
+  eh_fptr_t *wf;
   sll_t *wq;
 };
 
@@ -18,7 +19,10 @@ int
 event_add(int epfd,
           int fd,
           uint32_t events,
-          eh_fptr_t *func);
+          eh_fptr_t *rf,
+          eh_fptr_t *wf,
+          sll_t *wq,
+          struct epoll_event **oev);
 
 int
 event_del(int epfd,

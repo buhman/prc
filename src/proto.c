@@ -11,9 +11,39 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include "proto.h"
 #include "event.h"
+#include "term.h"
 
 #define BUFSIZE 512
+
+sll_t *proto_cwq;
+
+int
+proto_register(int epfd,
+               char *node,
+               char *service)
+{
+  int sfd, err;
+  sll_t *wq;
+
+  wq = calloc(1, sizeof(sll_t));
+  proto_cwq = wq;
+
+  sfd = proto_connect(node, service);
+  if (sfd < 0) {
+    perror("proto_connect()");
+    return sfd;
+  }
+
+  err = event_add(epfd, sfd, EPOLLIN, proto_read, proto_write, wq, NULL);
+  if (err < 0) {
+    perror("event_add()");
+    return err;
+  }
+
+  return 0;
+}
 
 int
 proto_connect(const char *node,
@@ -99,6 +129,9 @@ recv_line(const int fd,
     len = recv(fd, *buf_iter, buf_size - *recv_c, 0);
     if (len < 0)
       return len;
+    if (len == 0) {
+      return *recv_c;
+    }
 
     *recv_c += len;
   }
@@ -112,11 +145,11 @@ proto_read(struct epoll_event *ev)
   size_t recv_c;
   event_handler_t *eh = (event_handler_t*)ev->data.ptr;
 
-  buf = calloc(1, BUFSIZE);
+  buf = calloc(1, BUFSIZE + 1);
   buf_iter = buf;
   recv_c = 0;
 
-  while (buf_iter != NULL) {
+  while (true) {
     ret = recv_line(eh->fd, BUFSIZE, buf, &buf_iter, &recv_c);
     if (ret < 0) {
       if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -124,13 +157,25 @@ proto_read(struct epoll_event *ev)
       perror("recv_line()");
       return ret;
     }
+    if (ret == 0)
+      return 0;
 
-    printf("[%s]\n", buf_iter - ret);
+    //printf("[%s]\n", buf_iter - ret);
+
+    sll_push(term_wq, strdup(buf_iter - ret));
   }
 
   assert(recv_c == 0);
 
   free(buf);
+
+  return 1;
+}
+
+int
+proto_write(struct epoll_event *ev)
+{
+  fprintf(stderr, "proto_write(): STUB!\n");
 
   return 0;
 }

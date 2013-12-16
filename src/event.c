@@ -10,28 +10,24 @@ int
 event_add(int epfd,
           int fd,
           uint32_t events,
-          eh_fptr_t *func)
+          eh_fptr_t *rf,
+          eh_fptr_t *wf,
+          sll_t *wq,
+          struct epoll_event **oev)
 {
   int err;
   struct epoll_event *ev;
-  struct event_handler *eh;
-  sll_t *wq;
+  event_handler_t *eh;
 
   {
-    if (EPOLLIN & events)
-      wq = malloc(sizeof(sll_t));
-    else
-      wq = NULL;
-  }
-
-  {
-    eh = malloc(sizeof(struct event_handler));
+    eh = malloc(sizeof(event_handler_t));
     eh->epfd = epfd;
-    eh->func = func;
+    eh->rf = rf;
+    eh->wf = wf;
     eh->fd = fd;
     eh->wq = wq;
 
-    ev = malloc(sizeof(struct epoll_event));
+    ev = calloc(1, sizeof(struct epoll_event));
     ev->events = events;
     ev->data.ptr = eh;
   }
@@ -44,6 +40,9 @@ event_add(int epfd,
       return err;
     }
   }
+
+  if (oev)
+    *oev = ev;
 
   return 0;
 }
@@ -60,9 +59,6 @@ event_del(int epfd,
   err = epoll_ctl(epfd, EPOLL_CTL_DEL, eh->fd, NULL);
   if (err < 0)
     return err;
-
-  if (eh->wq)
-    free(eh->wq);
 
   free(eh);
   free(*ev);
