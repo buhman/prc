@@ -14,10 +14,13 @@
 #include "proto.h"
 #include "event.h"
 #include "term.h"
+#include "handler.h"
 
 #define BUFSIZE 512
 
 sll_t *proto_cwq;
+
+static char *read_buf = NULL;
 
 int
 proto_register(int epfd,
@@ -125,9 +128,10 @@ recv_line(const int fd,
         return len + 2;
       }
 
-      buf_iter = memmove(buf, *buf_iter, *recv_c);
+      *buf_iter = memmove(buf, *buf_iter, *recv_c);
     }
 
+    fprintf(stderr, "%p %d %p\n", buf, buf_size, *buf_iter);
     assert(buf + buf_size > *buf_iter);
     len = recv(fd, *buf_iter, buf_size - *recv_c, 0);
     if (len < 0)
@@ -144,16 +148,21 @@ int
 proto_read(struct epoll_event *ev)
 {
   int ret;
-  char *buf_iter, *buf;
+  char *buf_iter;
   size_t recv_c;
   event_handler_t *eh = (event_handler_t*)ev->data.ptr;
 
-  buf = calloc(1, BUFSIZE + 1);
-  buf_iter = buf;
-  recv_c = 0;
+  if (!read_buf) {
+    read_buf = calloc(1, BUFSIZE + 1);
+    recv_c = 0;
+  }
+  else
+    recv_c = strlen(read_buf);
+
+  buf_iter = read_buf + recv_c;
 
   while (true) {
-    ret = recv_line(eh->fd, BUFSIZE, buf, &buf_iter, &recv_c);
+    ret = recv_line(eh->fd, BUFSIZE, read_buf, &buf_iter, &recv_c);
     if (ret < 0) {
       if (errno == EAGAIN || errno == EWOULDBLOCK)
         break;
@@ -163,14 +172,23 @@ proto_read(struct epoll_event *ev)
     if (ret == 0)
       return 0;
 
-    //printf("[%s]\n", buf_iter - ret);
+    if (recv_c == 512)
+      fprintf(stderr, "full recv: [%s]\n", read_buf);
 
     sll_push(term_wq, strdup(buf_iter - ret));
+
+    assert(proto_parse(ev, buf_iter - ret) >= 0);
   }
 
-  assert(recv_c == 0);
-
-  free(buf);
+  if (recv_c > 0) {
+    *(read_buf + recv_c + 1) = '\0';
+    fprintf(stderr, "st %lu rc %lu ; rb [%s] bi [%s]\n", strlen(read_buf), recv_c, read_buf, buf_iter);
+    assert(strlen(read_buf) == recv_c);
+  }
+  else {
+    free(read_buf);
+    read_buf = NULL;
+  }
 
   return 1;
 }
@@ -187,11 +205,43 @@ proto_write(struct epoll_event *ev)
     sll_pop(eh->wq, &buf);
 
     fprintf(stderr, "buf: [%s]\n", buf);
-    ret = send(eh->fd, buf, BUFSIZE, 0);
+    ret = send(eh->fd, buf, strlen(buf), 0);
     assert(ret > 0);
   }
 
   free(buf);
+
+  return 0;
+}
+
+int
+proto_parse(struct epoll_event *ev,
+            char *buf)
+{
+  char *tok, *sp, *prefix = NULL;
+  event_handler_t *eh = (event_handler_t*)ev->data.ptr;
+
+  tok = strtok_r(buf, " ", &sp);
+  if (tok == NULL) {
+    fprintf(stderr, "proto_parse(): no prefix or command: [%s]\n", buf);
+    return -1;
+  }
+
+  if (*tok == ':') {
+    prefix = tok;
+
+    tok = strtok_r(NULL, " ", &sp);
+    if (tok == NULL) {
+      fprintf(stderr, "proto_parse(): no command: [%s]\n", buf);
+      return -1;
+    }
+  }
+  else
+    fprintf(stderr, "buf: [%s]\n", buf);
+
+  fprintf(stderr, "prefix: [%s]; cmd: [%s]\n", prefix, tok);
+
+  handler_lookup(tok, eh->wq, prefix, sp);
 
   return 0;
 }

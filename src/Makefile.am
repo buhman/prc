@@ -12,9 +12,11 @@ prc_SOURCES = \
 	event.c event.h \
 	proto.c proto.h \
 	term.c term.h \
+	handler.c handler.h \
+	sasl.c sasl.h \
 	prc.c
 
-#sasl.c sasl.h
+
 #plugin.c plugin.h
 
 prc_LDADD = \

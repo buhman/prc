@@ -10,6 +10,7 @@
 #include "term.h"
 #include "proto.h"
 #include "event.h"
+#include "handler.h"
 
 #include "prc.h"
 
@@ -30,6 +31,10 @@ main(int argc,
       exit(EXIT_FAILURE);
     }
   } /* ... */
+
+  {
+    handler_init();
+  }
 
   {
     sll_t *wq;

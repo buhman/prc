@@ -19,3 +19,7 @@ proto_read(struct epoll_event *ev);
 
 int
 proto_write(struct epoll_event *ev);
+
+int
+proto_parse(struct epoll_event *ev,
+            char *buf);
