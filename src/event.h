@@ -22,8 +22,8 @@ event_add(int epfd,
           eh_fptr_t *rf,
           eh_fptr_t *wf,
           sll_t *wq,
-          struct epoll_event **oev);
+          struct epoll_event *ev);
 
 int
 event_del(int epfd,
-          struct epoll_event **ev);
+          struct epoll_event *ev);

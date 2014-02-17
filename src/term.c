@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <termios.h>
 #include <fcntl.h>
 #include <assert.h>
+#include <errno.h>
+#include <string.h>
 
 #include <sys/ioctl.h>
 
@@ -15,7 +18,10 @@
 
 static struct winsize ws;
 sll_t *term_wq;
-static struct epoll_event *stdout_ev;
+static struct epoll_event stdout_ev;
+
+static char line_buf[512];
+static char *line_bufi = line_buf;
 
 int
 term_stdout(int epfd)
@@ -29,7 +35,7 @@ term_stdout(int epfd)
     if (err < 0)
       perror("event_add() stdout\n");
   }
-  else if (stdout_ev != NULL) {
+  else if (stdout_ev.data.ptr != NULL) {
     err = event_del(epfd, &stdout_ev);
     if (err < 0)
       perror("event_del() stdout\n");
@@ -63,9 +69,46 @@ term_register(int epfd)
 int
 term_read(struct epoll_event *ev)
 {
-  fprintf(stderr, "term_read(): STUB\n");
+  event_handler_t *eh = (event_handler_t*)ev->data.ptr;
+  ssize_t ret;
+  size_t rsize = 0;
+  char raw_buf[512];
 
-  return 0;
+  char *bufi;
+
+  while (true) {
+    ret = read(eh->fd, raw_buf, sizeof(raw_buf));
+    if (ret < 0) {
+      switch (errno) {
+      case EAGAIN:
+        break;
+      default:
+        perror("read()");
+        return -1;
+      }
+      break;
+    }
+    else
+      rsize += ret;
+  }
+
+  for(bufi = raw_buf; bufi < raw_buf + rsize; bufi++) {
+
+    switch (*bufi) {
+    case 127:
+      if (line_bufi > line_buf) {
+        sll_push(term_wq, strdup("\033[D \033[D"));
+        line_bufi--;
+      }
+    default:
+      *line_bufi = *bufi;
+      line_bufi++;
+      sll_push(term_wq, strndup(bufi, 1));
+      //write(STDOUT_FILENO, bufi, 1);
+    }
+  }
+
+  return 1;
 }
 
 int
@@ -77,7 +120,8 @@ term_write(struct epoll_event *ev)
 
     sll_pop(term_wq, &buf);
 
-    printf("async_as_fuck: [%s]\n", buf);
+    printf(buf);
+    fprintf(stderr, "async_as_fuck: [%s]\n", buf);
 
     free(buf);
   }
@@ -91,7 +135,7 @@ term_setup()
   int err, mode;
   struct termios t;
 
-  stdout_ev = NULL;
+  stdout_ev.data.ptr = NULL;
 
   {
     err = tcgetattr(STDIN_FILENO, &t);

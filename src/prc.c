@@ -11,6 +11,8 @@
 #include "proto.h"
 #include "event.h"
 
+#include "prc.h"
+
 #define MAXEVENT 5
 
 int
@@ -30,8 +32,15 @@ main(int argc,
   } /* ... */
 
   {
+    sll_t *wq;
+
     term_register(epfd);
-    proto_register(epfd, "irc.freenode.net", "6667");
+
+    proto_register(epfd, "irc.freenode.net", "6667", &wq);
+
+    sll_push(wq, prc_msg("CAP REQ :sasl", NULL));
+    sll_push(wq, prc_msg("NICK buhmin", NULL));
+    sll_push(wq, prc_msg("USER buhmin foo bar :buhman's minion", NULL));
   }
 
   while (true) {
@@ -51,14 +60,15 @@ main(int argc,
       ehi = (event_handler_t*)evi->data.ptr;
 
       if (evi->events & EPOLLIN) {
-        fprintf(stderr, "evir\n");
+        fprintf(stderr, "evir fd: %d\n", ehi->fd);
         err = (ehi->rf)(evi);
         if (err < 0)
           exit(EXIT_FAILURE);
         if (err == 0) {
           assert(!ehi->wq->head);
           free(ehi->wq);
-          err = event_del(epfd, &evi);
+          fprintf(stderr, "event_del, %p\n", (void*)evi);
+          err = event_del(epfd, evi);
           if (err < 0) {
             perror("event_del()");
             exit(EXIT_FAILURE);
@@ -68,7 +78,7 @@ main(int argc,
       }
 
       if (evi->events & EPOLLOUT) {
-        fprintf(stderr, "eviw\n");
+        fprintf(stderr, "eviw fd: %d\n", ehi->fd);
         err = (ehi->wf)(evi);
         if (err < 0)
           exit(EXIT_FAILURE);
@@ -77,12 +87,18 @@ main(int argc,
       if (!ehi->wq) /* HACK? */
         continue;
 
-      if (ehi->wq->head && !(evi->events & EPOLLOUT))
-        evi->events |= EPOLLOUT;
-      else if (!ehi->wq->head && (evi->events & EPOLLOUT))
-        evi->events &= ~EPOLLOUT;
+      /* evi->events will only include the current events; HACK adds EPOLLIN */
+      if (ehi->wq->head && !(evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
+        //evi->events |= EPOLLOUT;
+        evi->events = EPOLLOUT | EPOLLIN;
+      else if (!ehi->wq->head && (evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
+        //evi->events &= ~EPOLLOUT;
+        evi->events = EPOLLIN;
       else
         continue;
+
+      assert((evi->events & EPOLLOUT && ehi->fd != STDIN_FILENO) ||
+             (evi->events & EPOLLOUT) == 0);
 
       err = epoll_ctl(epfd, EPOLL_CTL_MOD, ehi->fd, evi);
       if (err < 0) {

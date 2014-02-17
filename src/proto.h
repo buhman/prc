@@ -7,7 +7,8 @@ extern sll_t *proto_cwq;
 int
 proto_register(int epfd,
                char *node,
-               char *service);
+               char *service,
+               sll_t **owq);
 
 int
 proto_connect(const char *node,

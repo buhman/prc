@@ -22,7 +22,8 @@ sll_t *proto_cwq;
 int
 proto_register(int epfd,
                char *node,
-               char *service)
+               char *service,
+               sll_t **owq)
 {
   int sfd, err;
   sll_t *wq;
@@ -41,6 +42,8 @@ proto_register(int epfd,
     perror("event_add()");
     return err;
   }
+
+  *owq = wq;
 
   return 0;
 }
@@ -175,7 +178,20 @@ proto_read(struct epoll_event *ev)
 int
 proto_write(struct epoll_event *ev)
 {
-  fprintf(stderr, "proto_write(): STUB!\n");
+  int ret;
+  char *buf;
+  event_handler_t *eh = (event_handler_t*)ev->data.ptr;
+
+  while (eh->wq->head) {
+
+    sll_pop(eh->wq, &buf);
+
+    fprintf(stderr, "buf: [%s]\n", buf);
+    ret = send(eh->fd, buf, BUFSIZE, 0);
+    assert(ret > 0);
+  }
+
+  free(buf);
 
   return 0;
 }

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include <sys/epoll.h>
 
@@ -13,11 +14,11 @@ event_add(int epfd,
           eh_fptr_t *rf,
           eh_fptr_t *wf,
           sll_t *wq,
-          struct epoll_event **oev)
+          struct epoll_event *oev)
 {
   int err;
-  struct epoll_event *ev;
   event_handler_t *eh;
+  struct epoll_event ev;
 
   {
     eh = malloc(sizeof(event_handler_t));
@@ -27,43 +28,41 @@ event_add(int epfd,
     eh->fd = fd;
     eh->wq = wq;
 
-    ev = calloc(1, sizeof(struct epoll_event));
-    ev->events = events;
-    ev->data.ptr = eh;
+    ev.events = events;
+    ev.data.ptr = eh;
   }
 
   {
-    err = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, ev);
+    err = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev);
     if (err < 0) {
       free(eh);
-      free(ev);
       return err;
     }
   }
 
-  if (oev)
-    *oev = ev;
+  if (oev) {
+    oev->events = events;
+    oev->data.ptr = eh;
+  }
 
   return 0;
 }
 
 int
 event_del(int epfd,
-          struct epoll_event **ev)
+          struct epoll_event *ev)
 {
   int err;
   event_handler_t *eh;
 
-  eh = (event_handler_t*)(*ev)->data.ptr;
+  eh = (event_handler_t*)ev->data.ptr;
 
   err = epoll_ctl(epfd, EPOLL_CTL_DEL, eh->fd, NULL);
   if (err < 0)
     return err;
 
   free(eh);
-  free(*ev);
-
-  *ev = NULL;
+  ev->data.ptr = NULL;
 
   return 0;
 }
