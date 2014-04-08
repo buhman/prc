@@ -36,7 +36,6 @@ configure
 depcomp
 install-sh
 missing
-common.am
 config.guess
 config.h
 config.h.in

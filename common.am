@@ -1,0 +1,6 @@
+AM_CFLAGS = \
+	-pedantic \
+	-pedantic-errors \
+	-Wall -Wextra \
+	-Wno-unused-parameter \
+	-Werror

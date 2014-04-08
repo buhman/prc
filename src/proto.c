@@ -172,7 +172,7 @@ proto_read(struct epoll_event *ev)
     if (ret == 0)
       return 0;
 
-    if (recv_c == 512)
+    if (recv_c == BUFSIZE)
       fprintf(stderr, "full recv: [%s]\n", read_buf);
 
     sll_push(term_wq, strdup(buf_iter - ret));
