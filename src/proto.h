@@ -2,8 +2,6 @@
 
 #include "sll.h"
 
-extern sll_t *proto_cwq;
-
 int
 proto_register(int epfd,
                char *node,
@@ -21,5 +19,9 @@ int
 proto_write(struct epoll_event *ev);
 
 int
-proto_parse(struct epoll_event *ev,
-            char *buf);
+proto_parse_buf(struct epoll_event *ev,
+                char *buf, size_t len);
+
+int
+proto_parse_line(struct epoll_event *ev,
+                 char *buf, size_t len);

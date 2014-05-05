@@ -45,20 +45,20 @@ void
 handler_lookup(char *command,
                sll_t *wq,
                char *prefix,
-               char *sp) {
+               char *buf) {
 
   handler_ht_t *item;
 
   HASH_FIND_STR(handler_head, command, item);
 
   if (item != NULL)
-    (item->func)(wq, prefix, sp);
+    (item->func)(wq, prefix, buf);
 }
 
 static void
-handler_cap(sll_t *wq, char *prefix, char *sp) {
+handler_cap(sll_t *wq, char *prefix, char *buf) {
 
-  fprintf(stderr, "handler_cap(): %s\n", strtok_r(NULL, "", &sp));
+  fprintf(stderr, "handler_cap(): %s\n", buf);
 
   /* lazy */
 
@@ -66,7 +66,7 @@ handler_cap(sll_t *wq, char *prefix, char *sp) {
 }
 
 static void
-handler_authenticate(sll_t *wq, char *prefix, char *sp) {
+handler_authenticate(sll_t *wq, char *prefix, char *buf) {
 
   char *cred;
 
@@ -81,7 +81,7 @@ handler_authenticate(sll_t *wq, char *prefix, char *sp) {
 }
 
 static void
-handler_capend(sll_t *wq, char *prefix, char *sp) {
+handler_capend(sll_t *wq, char *prefix, char *buf) {
 
   sll_push(wq, prc_msg("CAP END", NULL));
 }

@@ -14,8 +14,8 @@ prc_SOURCES = \
 	term.c term.h \
 	handler.c handler.h \
 	sasl.c sasl.h \
+	buf.c buf.h \
 	prc.c
-
 
 #plugin.c plugin.h
 

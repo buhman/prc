@@ -1,4 +1,4 @@
-#!/bin/sh -xu
+#!/bin/sh -xue
 
 autoreconf -i
 ./configure $@
