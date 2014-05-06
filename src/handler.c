@@ -3,21 +3,14 @@
 #include "prc.h"
 #include "sasl.h"
 #include "handler.h"
+#include "term.h"
 
-static void
-handler_cap(sll_t *wq, char *prefix, char *sp);
-
-static void
-handler_authenticate(sll_t *wq, char *prefix, char *sp);
-
-static void
-handler_ping(sll_t *wq, char *prefix, char *sp);
-
-static void
-handler_capend(sll_t *wq, char *prefix, char *sp);
-
-static void
-handler_welcome(sll_t *wq, char *prefix, char *sp);
+static cmd_handler_t handler_cap;
+static cmd_handler_t handler_authenticate;
+static cmd_handler_t handler_ping;
+static cmd_handler_t handler_capend;
+static cmd_handler_t handler_welcome;
+static cmd_handler_t handler_privmsg;
 
 static handler_ht_t *handler_head;
 
@@ -25,6 +18,7 @@ static handler_sym_t _handler_sym[] = {
   {"CAP", handler_cap},
   {"AUTHENTICATE", handler_authenticate},
   {"PING", handler_ping},
+  {"PRIVMSG", handler_privmsg},
   {"900", handler_capend},
   {"001", handler_welcome},
 };
@@ -103,5 +97,11 @@ handler_ping(sll_t *wq, char *prefix, char *buf) {
 static void
 handler_welcome(sll_t *wq, char *prefix, char *buf) {
 
-  //sll_push(wq, prc_msg("JOIN ##archlinux-botabuse", NULL));
+  sll_push(wq, prc_msg("JOIN ##archlinux-botabuse", NULL));
+}
+
+static void
+handler_privmsg(sll_t *wq, char *prefix, char *buf) {
+
+  term_printf("buf: [%s]", buf);
 }

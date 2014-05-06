@@ -15,9 +15,8 @@ prc_SOURCES = \
 	handler.c handler.h \
 	sasl.c sasl.h \
 	buf.c buf.h \
+	plugin.c plugin.h \
 	prc.c
-
-#plugin.c plugin.h
 
 prc_LDADD = \
 	$(GSASL_LIBS) \

@@ -33,25 +33,13 @@ plugin_load(char *name)
   return (*reg_fp)(&plugin_head);
 }
 
-int
-plugin_handler_cmd(sll_t *wq, char *cmd, char *target, char *tok)
-{
-  return prc_lookup2(plugin_head, wq, cmd, target, tok);
-}
-
-int
-plugin_handler(sll_t *wq, char *target, char *tok)
-{
-  return prc_lookup(plugin_head, wq, target, tok);
-}
-
 static void
-plugin_cmd(sll_t *wq, char *target, char *sp)
+plugin_cmd(sll_t *wq, char *target, char *buf)
 {
   char *action, *pred;
   int err;
 
-  action = strtok_r(NULL, " ", &sp);
+  action = strtok_r(NULL, " ", &buf);
   if (action == NULL) {
     fprintf(stderr, "[PLUGIN] no action\n");
     return;
@@ -59,7 +47,7 @@ plugin_cmd(sll_t *wq, char *target, char *sp)
 
   printf("action: [%s]\n", action);
 
-  pred = strtok_r(NULL, " ", &sp);
+  pred = strtok_r(NULL, " ", &buf);
   if (pred == NULL) {
     fprintf(stderr, "[PLUGIN] no pred\n");
     return;
@@ -74,10 +62,4 @@ plugin_cmd(sll_t *wq, char *target, char *sp)
       sll_push(wq, prc_msg("PRIVMSG", target, "[success]", NULL));
     }
   }
-}
-
-void
-plugin_init(handler_ht_t **admin_head)
-{
-  prc_register(admin_head, "plugin", plugin_cmd);
 }

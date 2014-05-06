@@ -16,6 +16,11 @@
 
 #define MAXEVENT 5
 
+sll_t *proto_cwq;
+
+extern struct epoll_event proto_cev;
+extern event_handler_t *proto_ceh;
+
 int
 main(int argc,
      char **argv)
@@ -102,6 +107,14 @@ main(int argc,
       else if (!ehi->wq->head && (evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
         //evi->events &= ~EPOLLOUT;
         evi->events = EPOLLIN;
+      else if (ehi->fd == STDIN_FILENO && proto_ceh->wq->head) {
+        proto_cev.events = EPOLLOUT | EPOLLIN;
+        err = epoll_ctl(epfd, EPOLL_CTL_MOD, proto_ceh->fd, &proto_cev);
+        if (err < 0) {
+          perror("epoll_ctl()");
+          exit(EXIT_FAILURE);
+        }
+      }
       else
         continue;
 

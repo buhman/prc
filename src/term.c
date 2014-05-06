@@ -8,23 +8,25 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <sys/ioctl.h>
 
 #include "event.h"
 #include "term.h"
 #include "buf.h"
-
-/* static char input_buf[510]; */
+#include "prc.h"
 
 static struct winsize ws;
 sll_t *term_wq;
 static struct epoll_event stdout_ev;
 
-static char line_buf[512];
+static char line_buf[MSG_SIZE];
 static char *line_bufi = line_buf;
 
-static char scratch[1024];
+static char scratch[MSG_SIZE * 2];
+
+extern event_handler_t *proto_ceh;
 
 int
 term_stdout(int epfd)
@@ -75,7 +77,7 @@ term_read(struct epoll_event *ev)
   event_handler_t *eh = (event_handler_t*)ev->data.ptr;
   ssize_t ret;
   size_t rsize = 0;
-  char raw_buf[512];
+  char raw_buf[MSG_SIZE];
 
   char *bufi;
 
@@ -99,18 +101,20 @@ term_read(struct epoll_event *ev)
 
     switch (*bufi) {
     case '\n':
-      snprintf(scratch, 512, "\033[%d;0f\033[2K", ws.ws_row);
+      term_parse();
+
+      snprintf(scratch, MSG_SIZE, "" FORCE_CURSORd ERASE_LINE, ws.ws_row);
       sll_push(term_wq, strdup(scratch));
-      *line_bufi = '\0';
-      //term_parse(line_buf);
-      line_bufi = line_buf;
+
       break;
     case '\b':
     case 127:
       if (line_bufi > line_buf) {
-        sll_push(term_wq, strdup("\033[D \033[D"));
+        sll_push(term_wq, strdup(BACKSPACE));
         line_bufi--;
       }
+      break;
+    case '\33':
       break;
     default:
       *line_bufi = *bufi;
@@ -122,6 +126,18 @@ term_read(struct epoll_event *ev)
   }
 
   return 1;
+}
+
+int
+term_parse()
+{
+  *line_bufi = '\0';
+  char *s = strndup(line_buf, line_bufi - line_buf);
+  sll_push(proto_ceh->wq, prc_msg(s));
+  free(s);
+  line_bufi = line_buf;
+
+  return 0;
 }
 
 int
@@ -142,12 +158,24 @@ term_write(struct epoll_event *ev)
 }
 
 void
-term_print(char *buf)
+term_printf(char *format, ...)
 {
+  char *buf = malloc(MSG_SIZE);
+
+  {
+    va_list ap;
+    va_start(ap, format);
+    vsnprintf(buf, MSG_SIZE, format, ap);
+    va_end(ap);
+  } /* ... */
+
   *line_bufi = '\0';
-  snprintf(scratch, 1024, "\033[2K\033D\033[%d;0f\033[A%s\033[%d;0f%s",
+  snprintf(scratch, MSG_SIZE,
+           "" ERASE_LINE SCROLL_DOWN FORCE_CURSORd CURSOR_UP "%s" FORCE_CURSORd "%s",
            ws.ws_row, buf, ws.ws_row, line_buf);
   sll_push(term_wq, strdup(scratch));
+
+  free(buf);
 }
 
 int

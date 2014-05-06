@@ -22,6 +22,9 @@
 static char *parse_buf = NULL;
 static char *parse_bufi = NULL;
 
+struct epoll_event proto_cev;
+event_handler_t *proto_ceh;
+
 int
 proto_register(int epfd,
                char *node,
@@ -31,6 +34,7 @@ proto_register(int epfd,
   int sfd, err;
   sll_t *wq;
 
+
   wq = calloc(1, sizeof(sll_t));
 
   sfd = proto_connect(node, service);
@@ -39,11 +43,13 @@ proto_register(int epfd,
     return sfd;
   }
 
-  err = event_add(epfd, sfd, EPOLLIN, proto_read, proto_write, wq, NULL);
+  err = event_add(epfd, sfd, EPOLLIN, proto_read, proto_write, wq, &proto_cev);
   if (err < 0) {
     perror("event_add()");
     return err;
   }
+
+  proto_ceh = (event_handler_t*)proto_cev.data.ptr;
 
   *owq = wq;
 
@@ -125,8 +131,6 @@ proto_read(struct epoll_event *ev)
       return 0;
     }
 
-    //fprintf(stderr, "recv(): %zd\n", len);
-
     proto_parse_buf(ev, rbuf, (size_t)len);
   }
 
@@ -146,8 +150,7 @@ proto_write(struct epoll_event *ev)
 
     sll_pop(eh->wq, &buf);
 
-    //fprintf(stderr, "buf: [%s]\n", buf);
-    term_print(buf);
+    term_printf(buf);
 
     ret = send(eh->fd, buf, strlen(buf), 0);
     assert(ret > 0);
@@ -201,6 +204,8 @@ int proto_parse_line(struct epoll_event *ev,
   char *tok, *bufi = buf, *prefix = NULL;
 
   *(buf + len) = '\0';
+
+  term_printf(buf);
 
   while (true) {
 

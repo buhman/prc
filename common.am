@@ -3,4 +3,5 @@ AM_CFLAGS = \
 	-pedantic-errors \
 	-Wall -Wextra \
 	-Wno-unused-parameter \
+	-Wno-error=unused-function \
 	-Werror
