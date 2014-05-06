@@ -13,6 +13,7 @@
 
 #include "event.h"
 #include "term.h"
+#include "buf.h"
 
 /* static char input_buf[510]; */
 
@@ -22,6 +23,8 @@ static struct epoll_event stdout_ev;
 
 static char line_buf[512];
 static char *line_bufi = line_buf;
+
+static char scratch[1024];
 
 int
 term_stdout(int epfd)
@@ -95,16 +98,26 @@ term_read(struct epoll_event *ev)
   for(bufi = raw_buf; bufi < raw_buf + rsize; bufi++) {
 
     switch (*bufi) {
+    case '\n':
+      snprintf(scratch, 512, "\033[%d;0f\033[2K", ws.ws_row);
+      sll_push(term_wq, strdup(scratch));
+      *line_bufi = '\0';
+      //term_parse(line_buf);
+      line_bufi = line_buf;
+      break;
+    case '\b':
     case 127:
       if (line_bufi > line_buf) {
         sll_push(term_wq, strdup("\033[D \033[D"));
         line_bufi--;
       }
+      break;
     default:
       *line_bufi = *bufi;
       line_bufi++;
       sll_push(term_wq, strndup(bufi, 1));
       //write(STDOUT_FILENO, bufi, 1);
+      break;
     }
   }
 
@@ -120,13 +133,21 @@ term_write(struct epoll_event *ev)
 
     sll_pop(term_wq, &buf);
 
-    printf(buf);
-    fprintf(stderr, "async_as_fuck: [%s]\n", buf);
+    write(STDOUT_FILENO, buf, strlen(buf));
 
     free(buf);
   }
 
   return 0;
+}
+
+void
+term_print(char *buf)
+{
+  *line_bufi = '\0';
+  snprintf(scratch, 1024, "\033[2K\033D\033[%d;0f\033[A%s\033[%d;0f%s",
+           ws.ws_row, buf, ws.ws_row, line_buf);
+  sll_push(term_wq, strdup(scratch));
 }
 
 int

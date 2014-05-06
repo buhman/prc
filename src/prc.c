@@ -65,10 +65,13 @@ main(int argc,
       ehi = (event_handler_t*)evi->data.ptr;
 
       if (evi->events & EPOLLIN) {
-        fprintf(stderr, "evir fd: %d\n", ehi->fd);
+        //fprintf(stderr, "evir fd: %d\n", ehi->fd);
+
         err = (ehi->rf)(evi);
         if (err < 0)
           exit(EXIT_FAILURE);
+
+        // remote disconnect
         if (err == 0) {
           assert(!ehi->wq->head);
           free(ehi->wq);
@@ -83,7 +86,7 @@ main(int argc,
       }
 
       if (evi->events & EPOLLOUT) {
-        fprintf(stderr, "eviw fd: %d\n", ehi->fd);
+        //fprintf(stderr, "eviw fd: %d\n", ehi->fd);
         err = (ehi->wf)(evi);
         if (err < 0)
           exit(EXIT_FAILURE);

@@ -11,14 +11,22 @@ static void
 handler_authenticate(sll_t *wq, char *prefix, char *sp);
 
 static void
+handler_ping(sll_t *wq, char *prefix, char *sp);
+
+static void
 handler_capend(sll_t *wq, char *prefix, char *sp);
+
+static void
+handler_welcome(sll_t *wq, char *prefix, char *sp);
 
 static handler_ht_t *handler_head;
 
 static handler_sym_t _handler_sym[] = {
   {"CAP", handler_cap},
   {"AUTHENTICATE", handler_authenticate},
+  {"PING", handler_ping},
   {"900", handler_capend},
+  {"001", handler_welcome},
 };
 
 void
@@ -36,7 +44,7 @@ handler_init() {
     item = malloc(sizeof(handler_ht_t));
     item->func = hsti->func;
 
-    fprintf(stderr, "HHTH [%s] -> [%p]\n", hsti->name, *(void**)&hsti->func);
+    //fprintf(stderr, "HHTH [%s] -> [%p]\n", hsti->name, *(void**)&hsti->func);
     HASH_ADD_KEYPTR(hh, handler_head, hsti->name, strlen(hsti->name), item);
   }
 }
@@ -58,7 +66,7 @@ handler_lookup(char *command,
 static void
 handler_cap(sll_t *wq, char *prefix, char *buf) {
 
-  fprintf(stderr, "handler_cap(): %s\n", buf);
+  //fprintf(stderr, "handler_cap(): %s\n", buf);
 
   /* lazy */
 
@@ -70,7 +78,7 @@ handler_authenticate(sll_t *wq, char *prefix, char *buf) {
 
   char *cred;
 
-  fprintf(stderr, "auth()\n");
+  //fprintf(stderr, "auth()\n");
 
   /* lazy */
 
@@ -84,4 +92,16 @@ static void
 handler_capend(sll_t *wq, char *prefix, char *buf) {
 
   sll_push(wq, prc_msg("CAP END", NULL));
+}
+
+static void
+handler_ping(sll_t *wq, char *prefix, char *buf) {
+
+  sll_push(wq, prc_msg("PONG buhmin", NULL));
+}
+
+static void
+handler_welcome(sll_t *wq, char *prefix, char *buf) {
+
+  //sll_push(wq, prc_msg("JOIN ##archlinux-botabuse", NULL));
 }

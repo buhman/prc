@@ -125,7 +125,7 @@ proto_read(struct epoll_event *ev)
       return 0;
     }
 
-    fprintf(stderr, "recv(): %zd\n", len);
+    //fprintf(stderr, "recv(): %zd\n", len);
 
     proto_parse_buf(ev, rbuf, (size_t)len);
   }
@@ -146,7 +146,9 @@ proto_write(struct epoll_event *ev)
 
     sll_pop(eh->wq, &buf);
 
-    fprintf(stderr, "buf: [%s]\n", buf);
+    //fprintf(stderr, "buf: [%s]\n", buf);
+    term_print(buf);
+
     ret = send(eh->fd, buf, strlen(buf), 0);
     assert(ret > 0);
   }
@@ -161,12 +163,10 @@ proto_parse_buf(struct epoll_event *ev,
                 char *buf, size_t len)
 {
   char *ptr;
-  //event_handler_t *eh = (event_handler_t*)ev->data.ptr;
 
   if (parse_buf == NULL) {
     parse_buf = malloc(BUFSIZE * 2);
     parse_bufi = parse_buf;
-    fprintf(stderr, "init parse_buf %p\n", parse_buf);
   }
 
   {
@@ -177,25 +177,16 @@ proto_parse_buf(struct epoll_event *ev,
 
   while (true) {
     ptr = memchr(parse_buf, '\r', parse_bufi - parse_buf);
-    if (ptr)
-      if (ptr + 1 < parse_bufi && *(ptr + 1) == '\n') {
-        fprintf(stderr, "CRLF at %p; parse_bufi %p;\n ptr:\n", ptr, parse_bufi);
-        printbuf(parse_buf, ptr - parse_buf);
 
-        proto_parse_line(ev, parse_buf, ptr - parse_buf);
+    if (ptr && ptr + 1 < parse_bufi && *(ptr + 1) == '\n') {
 
-        memmove(parse_buf, ptr + 2, parse_bufi - ptr - 2);
-        fprintf(stderr, "SHIFT %zd\n", parse_bufi - ptr - 2);
-        parse_bufi = parse_buf + (parse_bufi - ptr - 2);
+      proto_parse_line(ev, parse_buf, ptr - parse_buf);
 
-        fprintf(stderr, "memmove(); parse_bufi %p;\n parse_buf:\n", parse_bufi);
-        continue;
-      }
-      else
-        fprintf(stderr, "CR without LF\n");
+      memmove(parse_buf, ptr + 2, parse_bufi - ptr - 2);
+      parse_bufi = parse_buf + (parse_bufi - ptr - 2);
+    }
     else
-      fprintf(stderr, "no CRLF\n");
-    break;
+      break;
   }
 
   assert(parse_bufi - parse_buf < BUFSIZE);
@@ -208,6 +199,8 @@ int proto_parse_line(struct epoll_event *ev,
 {
   event_handler_t *eh = (event_handler_t*)ev->data.ptr;
   char *tok, *bufi = buf, *prefix = NULL;
+
+  *(buf + len) = '\0';
 
   while (true) {
 
@@ -226,7 +219,6 @@ int proto_parse_line(struct epoll_event *ev,
       continue;
     }
 
-    fprintf(stderr, "prefix: [%s]; cmd: [%s]\n", prefix, bufi);
     handler_lookup(bufi, eh->wq, prefix, tok + 1);
 
     break;

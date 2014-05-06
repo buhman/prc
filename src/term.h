@@ -23,5 +23,8 @@ term_read(struct epoll_event *ev);
 int
 term_write(struct epoll_event *ev);
 
+void
+term_print(char *buf);
+
 int
 term_setup();
