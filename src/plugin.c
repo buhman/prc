@@ -6,8 +6,9 @@
 
 #include "proto.h"
 #include "plugin.h"
+#include "term.h"
 
-static handler_ht_t *plugin_head;
+static prc_plugin_ht_t *plugin_head;
 
 static int
 plugin_load(char *name)
@@ -33,33 +34,41 @@ plugin_load(char *name)
   return (*reg_fp)(&plugin_head);
 }
 
-static void
-plugin_cmd(sll_t *wq, char *target, char *buf)
+void
+plugin_lookup(sll_t *wq, char *prefix, char *target,
+              char *cmd, char *args) {
+
+  prc_plugin_ht_t *item;
+
+  HASH_FIND_STR(plugin_head, cmd, item);
+
+  if (item != NULL)
+    (item->func)(wq, prefix, target, args);
+}
+
+void
+plugin_cmd(sll_t *wq, char *prefix, char *target, char *buf)
 {
-  char *action, *pred;
   int err;
+  char *cmd, *tok, *args;
 
-  action = strtok_r(NULL, " ", &buf);
-  if (action == NULL) {
-    fprintf(stderr, "[PLUGIN] no action\n");
+  tok = strchr(buf, ' ');
+  if (!tok) {
+    term_printf("cmd(): no tok");
     return;
   }
 
-  printf("action: [%s]\n", action);
+  *tok = '\0';
+  args = tok + 1;
+  cmd = buf;
 
-  pred = strtok_r(NULL, " ", &buf);
-  if (pred == NULL) {
-    fprintf(stderr, "[PLUGIN] no pred\n");
-    return;
-  }
+  term_printf("cmd(): [%s] [%s]", cmd, args);
 
-  if (strcmp(action, "load") == 0) {
-    err = plugin_load(pred);
-    if (err < 0) {
+  if (strcmp(cmd, "load") == 0) {
+    err = plugin_load(args);
+    if (err < 0)
       sll_push(wq, prc_msg("PRIVMSG", target, "[failure]", NULL));
-    }
-    else {
+    else
       sll_push(wq, prc_msg("PRIVMSG", target, "[success]", NULL));
-    }
   }
 }

@@ -22,3 +22,6 @@ prc_LDADD = \
 	$(GSASL_LIBS) \
 	$(top_builddir)/lib/libprc.la \
 	-ldl
+
+prc_LDFLAGS = \
+	-Wl,-rpath -Wl,/home/zack/prc/plugins/.libs

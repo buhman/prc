@@ -11,7 +11,7 @@ static fact_ht_t *facts_head;
 static char *db_path;
 
 static void
-facts_find_handler(sll_t *wq, char *target, char *tok)
+facts_find_handler(sll_t *wq, char *prefix, char *target, char *tok)
 {
   char *fact, *pmsg;
 
@@ -33,7 +33,7 @@ facts_find_handler(sll_t *wq, char *target, char *tok)
 }
 
 static void
-facts_add_handler(sll_t *wq, char *target, char *tok)
+facts_add_handler(sll_t *wq, char *prefix, char *target, char *tok)
 {
   char *key, *fact, *status, *sp;
 
@@ -162,7 +162,7 @@ facts_init_ht(char *path)
 }
 
 void
-prc_reg(handler_ht_t **plugin_head)
+prc_reg(prc_plugin_ht_t **plugin_head)
 {
   int err;
 

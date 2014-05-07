@@ -1,12 +1,12 @@
 #pragma once
 
-typedef int (reg_fp_t)(handler_ht_t**);
+#include "prc.h"
 
-int
-plugin_handler_cmd(sll_t *wq, char *cmd, char *target, char *tok);
-
-int
-plugin_handler(sll_t *wq, char *target, char *sp);
+typedef int (reg_fp_t)(prc_plugin_ht_t**);
 
 void
-plugin_init(handler_ht_t **admin_head);
+plugin_lookup(sll_t *wq, char *prefix, char *target,
+              char *cmd, char *args);
+
+void
+plugin_cmd(sll_t *wq, char *prefix, char *target, char *buf);

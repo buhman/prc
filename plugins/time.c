@@ -4,7 +4,7 @@
 #include "prc.h"
 
 void
-time_cmd(sll_t *wq, char *target, char *sp)
+time_cmd(sll_t *wq, char *prefix, char* target, char *args)
 {
   char buf[20];
   time_t t;
@@ -16,7 +16,7 @@ time_cmd(sll_t *wq, char *target, char *sp)
 }
 
 void
-prc_reg(handler_ht_t **plugin_head)
+prc_reg(prc_plugin_ht_t **plugin_head)
 {
   prc_register(plugin_head, "time", time_cmd);
 }

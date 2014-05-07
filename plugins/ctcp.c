@@ -3,22 +3,20 @@
 #include "prc.h"
 
 static void
-ctcp_handler(sll_t *wq, char *target, char *tok)
+ctcp_handler(sll_t *wq, char *prefix, char *target, char *args)
 {
-  char *sp, *cmd;
+  char *tok;
 
-  tok = strtok_r(tok, "\001", &sp);
+  tok = strchr(args, '\001');
+  *tok = '\0';
 
-  printf("ctcp tok [%s]\n", tok);
-
-  cmd = strtok_r(tok, " ", &sp);
-
-  if (strcmp("VERSION", cmd) == 0) {
-    sll_push(wq, prc_msg("NOTICE", target, ":\001VERSION suck my cock\001", NULL));
-  }
+  if (strcmp("VERSION", args) == 0)
+    sll_push(wq, prc_msg("NOTICE", prc_prefix_parse(prefix, NICK),
+                         ":\001VERSION Suck my cock\001", NULL));
 }
 
 void
-prc_reg(handler_ht_t **plugin_head)                                         {
+prc_reg(prc_plugin_ht_t **plugin_head)
+{
   prc_register(plugin_head, "ctcp", ctcp_handler);
 }

@@ -4,6 +4,7 @@
 #include "sasl.h"
 #include "handler.h"
 #include "term.h"
+#include "plugin.h"
 
 static cmd_handler_t handler_cap;
 static cmd_handler_t handler_authenticate;
@@ -48,6 +49,7 @@ handler_lookup(char *command,
                sll_t *wq,
                char *prefix,
                char *buf) {
+
 
   handler_ht_t *item;
 
@@ -103,5 +105,46 @@ handler_welcome(sll_t *wq, char *prefix, char *buf) {
 static void
 handler_privmsg(sll_t *wq, char *prefix, char *buf) {
 
-  term_printf("buf: [%s]", buf);
+  char *tok, *target, *msg;
+
+  tok = strchr(buf, ' ');
+  if (!tok) {
+    term_printf("privmsg(): no tok1");
+    return;
+  }
+  *tok = '\0';
+
+  target = buf;
+
+  if (*(tok + 1) == ':')
+    msg = tok + 2;
+  else {
+    term_printf("privmsg(): no msg: [%s] [%s] [%s]", prefix, target, tok + 1);
+    return;
+  }
+
+  // plugin prefix
+  switch (*msg) {
+  case '\001':
+    plugin_lookup(wq, prefix, target, "ctcp", msg + 1);
+    break;
+  case '`':
+    plugin_lookup(wq, prefix, target, "fact_find", msg + 1);
+    break;
+  case '%':
+    plugin_lookup(wq, prefix, target, "fact_add", msg + 1);
+    break;
+  case '$':
+    {
+      tok = strchr(msg + 1, ' ');
+      if (tok) {
+        *tok = '\0';
+        plugin_lookup(wq, prefix, target, msg + 1, tok + 1);
+      }
+    }
+    break;
+  case '#':
+    plugin_cmd(wq, prefix, target, msg + 1);
+    break;
+  }
 }

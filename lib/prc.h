@@ -5,30 +5,26 @@
 
 #define MSG_SIZE 512
 
-typedef void (cmd_handler_t)(sll_t*, char*, char*);
+typedef void (prc_plugin_cmd_t)(sll_t *wq, char *prefix, char *target, char *args);
 
-typedef struct handler_ht handler_ht_t;
+typedef struct prc_plugin_ht prc_plugin_ht_t;
 
-struct handler_ht {
-  cmd_handler_t *func;
+struct prc_plugin_ht {
+  prc_plugin_cmd_t *func;
   UT_hash_handle hh;
 };
 
+enum prefix_cp {
+  NICK = 0,
+  USER,
+  HOST
+};
+
 void
-prc_register(handler_ht_t **head, char *key, cmd_handler_t *func);
+prc_register(prc_plugin_ht_t **head, char *key, prc_plugin_cmd_t *func);
+
+char*
+prc_prefix_parse(char *prefix, enum prefix_cp comp);
 
 char*
 prc_msg(char *cmd, ...);
-
-int
-prc_lookup2(handler_ht_t *head,
-            sll_t *wq,
-            char *key,
-            char *target,
-            char *tok);
-
-int
-prc_lookup(handler_ht_t *head,
-           sll_t *wq,
-           char *target,
-           char *tok);
