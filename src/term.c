@@ -28,6 +28,8 @@ static char scratch[MSG_SIZE * 2];
 
 extern event_handler_t *proto_ceh;
 
+static char *ttarget = NULL;
+
 int
 term_stdout(int epfd)
 {
@@ -128,13 +130,67 @@ term_read(struct epoll_event *ev)
   return 1;
 }
 
+static int
+term_me(int action)
+{
+  char *tok, *s;
+
+  if (ttarget) {
+
+    tok = strchr(line_buf, ' ');
+    if (tok) {
+      if (!ttarget) {
+        term_printf("no ttarget");
+        return -1;
+      }
+      s = strdup(tok);
+      if (action)
+        sll_push(proto_ceh->wq, prc_msg("PRIVMSG", ttarget,
+                                        ":\001ACTION", s + 1, "\001", NULL));
+      else {
+        *s = ':';
+        sll_push(proto_ceh->wq, prc_msg("PRIVMSG", ttarget, s, NULL));
+      }
+      free(s);
+    }
+  }
+
+  return 0;
+}
+
+static int
+term_target()
+{
+  char *tok;
+
+  tok = strchr(line_buf, ' ');
+  if (tok) {
+    if (ttarget)
+      free(ttarget);
+    ttarget = strdup(tok + 1);
+    term_printf("target: [%s]", ttarget);
+  }
+
+  return 0;
+}
+
 int
 term_parse()
 {
   *line_bufi = '\0';
-  char *s = strndup(line_buf, line_bufi - line_buf);
-  sll_push(proto_ceh->wq, prc_msg(s));
-  free(s);
+
+  if (memcmp(line_buf, "/act", 3) == 0)
+    term_me(1);
+  else if (memcmp(line_buf, "/tgt", 4) == 0)
+    term_target();
+  else if (memcmp(line_buf, "/msg", 4) == 0)
+    term_me(0);
+  else {
+    char *s = strndup(line_buf, line_bufi - line_buf);
+    sll_push(proto_ceh->wq, prc_msg(s));
+    free(s);
+  }
+
   line_bufi = line_buf;
 
   return 0;
