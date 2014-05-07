@@ -21,8 +21,7 @@ static struct winsize ws;
 sll_t *term_wq;
 static struct epoll_event stdout_ev;
 
-static char line_buf[MSG_SIZE];
-static char *line_bufi = line_buf;
+static char *line_buf, *line_bufi;
 
 static char scratch[MSG_SIZE * 2];
 
@@ -122,7 +121,6 @@ term_read(struct epoll_event *ev)
       *line_bufi = *bufi;
       line_bufi++;
       sll_push(term_wq, strndup(bufi, 1));
-      //write(STDOUT_FILENO, bufi, 1);
       break;
     }
   }
@@ -131,29 +129,29 @@ term_read(struct epoll_event *ev)
 }
 
 static int
-term_me(int action)
+term_me()
 {
-  char *tok, *s;
+  char *tok;
 
   if (ttarget) {
-
     tok = strchr(line_buf, ' ');
-    if (tok) {
-      if (!ttarget) {
-        term_printf("no ttarget");
-        return -1;
-      }
-      s = strdup(tok);
-      if (action)
-        sll_push(proto_ceh->wq, prc_msg("PRIVMSG", ttarget,
-                                        ":\001ACTION", s + 1, "\001", NULL));
-      else {
-        *s = ':';
-        sll_push(proto_ceh->wq, prc_msg("PRIVMSG", ttarget, s, NULL));
-      }
-      free(s);
-    }
+    if (tok)
+      sll_push(proto_ceh->wq, prc_msg("PRIVMSG", ttarget,
+                                      ":\001ACTION", tok + 1, "\001", NULL));
   }
+  else
+    return -1;
+
+  return 0;
+}
+
+static int
+term_msg()
+{
+  if (ttarget)
+    sll_push(proto_ceh->wq, prc_msg("PRIVMSG", ttarget, ":", line_buf, NULL));
+  else
+    return -1;
 
   return 0;
 }
@@ -180,16 +178,13 @@ term_parse()
   *line_bufi = '\0';
 
   if (memcmp(line_buf, "/act", 3) == 0)
-    term_me(1);
+    term_me();
   else if (memcmp(line_buf, "/tgt", 4) == 0)
     term_target();
-  else if (memcmp(line_buf, "/msg", 4) == 0)
-    term_me(0);
-  else {
-    char *s = strndup(line_buf, line_bufi - line_buf);
-    sll_push(proto_ceh->wq, prc_msg(s));
-    free(s);
-  }
+  else if (*line_buf == ':')
+    sll_push(proto_ceh->wq, prc_msg(line_buf + 1, NULL));
+  else
+    term_msg();
 
   line_bufi = line_buf;
 
@@ -278,6 +273,11 @@ term_setup()
       perror("TIOCGWINSZ");
       return err;
     }
+  }
+
+  {
+    line_buf = malloc(MSG_SIZE);
+    line_bufi = line_buf;
   }
 
   return 0;

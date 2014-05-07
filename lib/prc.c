@@ -48,7 +48,11 @@ prc_msg(char *cmd, ...)
 
   while (arg != NULL) {
 
-    ibuf += sprintf(ibuf, "%s ", arg);
+    /* HACK */
+    if (*arg == ':' && *(arg + 1) == '\0')
+      ibuf += sprintf(ibuf, ":");
+    else
+      ibuf += sprintf(ibuf, "%s ", arg);
 
     arg = va_arg(ap, char*);
   }
