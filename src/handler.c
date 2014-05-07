@@ -82,6 +82,8 @@ handler_authenticate(sll_t *wq, char *prefix, char *buf) {
     return;
 
   sll_push(wq, prc_msg("AUTHENTICATE", cred, NULL));
+
+  free(cred);
 }
 
 static void

@@ -154,9 +154,9 @@ proto_write(struct epoll_event *ev)
 
     ret = send(eh->fd, buf, strlen(buf), 0);
     assert(ret > 0);
-  }
 
-  free(buf);
+    free(buf);
+  }
 
   return 0;
 }
