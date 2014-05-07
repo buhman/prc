@@ -2,6 +2,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "prc.h"
 
@@ -28,7 +29,7 @@ facts_find_handler(sll_t *wq, char *prefix, char *target, char *tok)
       free(pmsg);
     }
     else
-      printf("FACT [%s] not found\n", tok);
+      fprintf(stderr, "FACT [%s] not found\n", tok);
   }
 }
 
@@ -118,22 +119,50 @@ facts_get(char *key)
 int
 facts_init_ht(char *path)
 {
-  int dbfd;
+  int dbfd, err;
   fact_ht_t *item;
   char *buf, *ibuf, *ptr, *sp, *tok, *key;
-  ssize_t size;
+  size_t size;
 
   facts_head = NULL;
 
   {
     db_path = path;
-    dbfd = open(path, O_RDONLY);
 
-    size = dbuf_read(dbfd, DBUF_READ, &buf);
-    if (size < 0)
-      return size;
+    {
+      struct stat db_stat;
 
-    ibuf = buf;
+      err = stat(path, &db_stat);
+      if (err < 0) {
+        perror("stat");
+        return err;
+      }
+
+      size = db_stat.st_size;
+      buf = malloc(size);
+      ibuf = buf;
+    }
+
+    {
+      ssize_t ret;
+
+      dbfd = open(path, O_RDONLY);
+      if (dbfd < 0) {
+        perror("open");
+        return dbfd;
+      }
+      ret = read(dbfd, buf, size);
+
+      if (ret < 0) {
+        perror("read");
+        return ret;
+      }
+
+      if ((size_t)ret != size) {
+        fprintf(stderr, "ret != size\n");
+        return -1;
+      }
+    }
   }
 
   {
