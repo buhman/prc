@@ -141,6 +141,8 @@ handler_privmsg(sll_t *wq, char *prefix, char *buf) {
         *tok = '\0';
         plugin_lookup(wq, prefix, target, msg + 1, tok + 1);
       }
+      else
+        plugin_lookup(wq, prefix, target, msg + 1, NULL);
     }
     break;
   case '#':
