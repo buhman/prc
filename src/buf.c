@@ -11,8 +11,6 @@ printbuf(char *buf, int len)
     else
       fprintf(stderr, "%x ", *bufi);
 
-
-
     bufi++;
   }
 

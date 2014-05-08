@@ -1,0 +1,39 @@
+TODO
+----
+
+* Add 'buffer' (and logging) support
+
+    Implementation is planned to be via memory-mapped file access, one
+    file for each buffer. (Active) buffer output would be not only
+    written to the terminal, but also to said memory-mapped (log)
+    file.
+
+    This also implies the ability to perform complete redraws of
+    contents upon TE resize events/etc.. in addition to redraws
+    necessary to switch terminal output between buffers.
+
+* Handle signals (SIGINT)
+
+    The signal handler would utilize an eventfd to inform the epoll
+    loop of this change, so that it can make the appropriate decisions
+    regarding any cleanup of other open file descriptors and write
+    queues.
+
+* Plugin unload/reload
+
+    The primary purpose of the plugin architecture has always been to
+    allow addition of arbitrary functionality without necessitating a
+    new instance of prc be compiled/started.
+
+    The implementation would involve both a symbol-unloading and
+    (automated?) un-registration procedure, followed by the loading of
+    said new DSO.
+
+* Runtime configuration
+
+    Currently most "configuration" such as credentials, servers to
+    connect to, channels to join, etc.. are hard-coded in prc sources;
+    these rather common things should be moved to a separate
+    runtime-modifiable configuration file.
+
+* World Domination
