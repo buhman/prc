@@ -1,39 +1,89 @@
+prc (core)
+==========
+
 TODO
 ----
 
-* Add 'buffer' (and logging) support
+### Add 'buffer' (and logging) support
 
-    Implementation is planned to be via memory-mapped file access, one
-    file for each buffer. (Active) buffer output would be not only
-    written to the terminal, but also to said memory-mapped (log)
-    file.
+Implementation is planned to be via memory-mapped file access, one
+file for each buffer. (Active) buffer output would be not only written
+to the terminal, but also to said memory-mapped (log) file.
 
-    This also implies the ability to perform complete redraws of
-    contents upon TE resize events/etc.. in addition to redraws
-    necessary to switch terminal output between buffers.
+This also implies the ability to perform complete redraws of contents
+upon TE resize events/etc.. in addition to redraws necessary to switch
+terminal output between buffers.
 
-* Handle signals (SIGINT)
+### Handle signals (SIGINT)
 
-    The signal handler would utilize an eventfd to inform the epoll
-    loop of this change, so that it can make the appropriate decisions
-    regarding any cleanup of other open file descriptors and write
-    queues.
+The signal handler would utilize an eventfd to inform the epoll loop
+of this change, so that it can make the appropriate decisions
+regarding any cleanup of other open file descriptors and write queues.
 
-* Plugin unload/reload
+### Plugin unload/reload
 
-    The primary purpose of the plugin architecture has always been to
-    allow addition of arbitrary functionality without necessitating a
-    new instance of prc be compiled/started.
+The primary purpose of the plugin architecture has always been to
+allow addition of arbitrary functionality without necessitating a new
+instance of prc be compiled/started.
 
-    The implementation would involve both a symbol-unloading and
-    (automated?) un-registration procedure, followed by the loading of
-    said new DSO.
+The implementation would involve both a symbol-unloading and
+(automated?) un-registration procedure, followed by the loading of
+said new DSO.
 
-* Runtime configuration
+### Plugin output; nick-directed
 
-    Currently most "configuration" such as credentials, servers to
-    connect to, channels to join, etc.. are hard-coded in prc sources;
-    these rather common things should be moved to a separate
-    runtime-modifiable configuration file.
+This involves the addition of a new syntax element (with argument(s))
+that would rewrite plugin output to do things like 'ping' particular
+nicks with plugin output.
 
-* World Domination
+This should be implemented by plugin.c, and not by, e.g, each
+individual plugin.
+
+### Runtime configuration
+
+Currently most "configuration" such as credentials, servers to connect
+to, channels to join, etc.. are hard-coded in prc sources; these
+rather common things should be moved to a separate runtime-modifiable
+configuration file.
+
+### World Domination
+
+Sandbox
+-------
+
+### Global hashtable of hashtables
+
+The global hashtable would be implemented as a singleton--libprc would
+implement useful generic access methods. New hashtables would be
+created on-the-fly as they are referenced when adding key/value pairs.
+
+### New hashtable implementation
+
+As fun as uthash is, I'm not sure how comfortable I am having ~1,000
+lines of code in-tree that I do not maintain. I also don't like
+staring at macro expansion errors and having to scroll through miles
+of it just to find the real problem.
+
+The buhman-hashtable doesn't even need to be quite as fast, etc.. as
+uthash, it just needs to be buhman.
+
+Plugins
+=======
+
+TODO
+----
+
+### libquotes
+
+Yet-another key-value database, this time of things people said. This
+requires `Add 'buffer' (and logging) support`, in addition to
+significant changes to the plugin architecture.
+
+Sandbox
+-------
+
+### libfacts
+
+libfacts currently registers `fact_find` and `fact_add`; it would make
+negligibly more sense if it registered only `fact`, where said
+meta-handler would pass off `find`, `add`, etc...
