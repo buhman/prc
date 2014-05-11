@@ -14,12 +14,6 @@ This also implies the ability to perform complete redraws of contents
 upon TE resize events/etc.. in addition to redraws necessary to switch
 terminal output between buffers.
 
-### Handle signals (SIGINT)
-
-The signal handler would utilize an eventfd to inform the epoll loop
-of this change, so that it can make the appropriate decisions
-regarding any cleanup of other open file descriptors and write queues.
-
 ### Plugin unload/reload
 
 The primary purpose of the plugin architecture has always been to
