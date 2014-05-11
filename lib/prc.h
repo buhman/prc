@@ -23,6 +23,9 @@ enum prefix_cp {
 void
 prc_register(prc_plugin_ht_t **head, char *key, prc_plugin_cmd_t *func);
 
+void
+prc_deregister(prc_plugin_ht_t **head, char *key);
+
 char*
 prc_prefix_parse(char *prefix, enum prefix_cp comp);
 

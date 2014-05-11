@@ -20,3 +20,9 @@ prc_reg(prc_plugin_ht_t **plugin_head)
 {
   prc_register(plugin_head, "ctcp", ctcp_handler);
 }
+
+void
+prc_dereg(prc_plugin_ht_t **plugin_head)
+{
+  prc_deregister(plugin_head, "ctcp");
+}

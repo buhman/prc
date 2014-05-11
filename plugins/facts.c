@@ -191,6 +191,18 @@ facts_init_ht(char *path)
 }
 
 void
+facts_destroy_ht()
+{
+  static fact_ht_t *item, *tmp;
+
+  HASH_ITER(hh, facts_head, item, tmp) {
+    HASH_DELETE(hh, facts_head, item);
+    free(item->fact);
+    free(item);
+  }
+}
+
+void
 prc_reg(prc_plugin_ht_t **plugin_head)
 {
   int err;
@@ -203,4 +215,13 @@ prc_reg(prc_plugin_ht_t **plugin_head)
 
   prc_register(plugin_head, "fact_find", facts_find_handler);
   prc_register(plugin_head, "fact_add", facts_add_handler);
+}
+
+void
+prc_dereg(prc_plugin_ht_t **plugin_head)
+{
+  facts_destroy_ht();
+
+  prc_deregister(plugin_head, "fact_find");
+  prc_deregister(plugin_head, "fact_add");
 }

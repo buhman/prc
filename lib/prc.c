@@ -14,6 +14,22 @@ prc_register(prc_plugin_ht_t **head, char *key, prc_plugin_cmd_t *func)
   HASH_ADD_KEYPTR(hh, *head, key, strlen(key), item);
 }
 
+void
+prc_deregister(prc_plugin_ht_t **head, char *key)
+{
+  prc_plugin_ht_t *item;
+
+  HASH_FIND_STR(*head, key, item);
+  if (!item) {
+    fprintf(stderr, "attempt to deregister unregistered [%s]\n", key);
+    return;
+  }
+
+  free(item);
+
+  HASH_DELETE(hh, *head, item);
+}
+
 char*
 prc_prefix_parse(char *prefix, enum prefix_cp comp)
 {
