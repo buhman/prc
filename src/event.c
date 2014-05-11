@@ -1,11 +1,67 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
 
 #include <sys/epoll.h>
+#include <sys/eventfd.h>
 
 #include "sll.h"
 #include "event.h"
+
+static int evfd;
+
+static void
+handle_signal(int signum)
+{
+  int err;
+  long long *buf = calloc(1, sizeof(long long));
+  *buf = 1 << signum;
+
+  err = write(evfd, (char*)buf, sizeof(long long));
+  if (err < 0)
+    perror("write(evfd)");
+
+  free(buf);
+}
+
+int
+event_init(int epfd)
+{
+  int err;
+  struct sigaction *act;
+
+  evfd = eventfd(0, EFD_NONBLOCK);
+  if (evfd < 0) {
+    perror("eventfd");
+    return evfd;
+  }
+
+  {
+    act = calloc(1, sizeof(struct sigaction));
+    act->sa_handler = handle_signal;
+
+    err = sigaction(SIGINT, act, NULL);
+    if (err < 0) {
+      perror("sigaction");
+      free(act);
+      return err;
+    }
+
+    free(act);
+  }
+
+  {
+    err = event_add(epfd, evfd, EPOLLIN, NULL, NULL, NULL, NULL);
+    if (err < 0) {
+      perror("event_add");
+      return err;
+    }
+  }
+
+  return evfd;
+}
 
 int
 event_add(int epfd,

@@ -16,6 +16,9 @@ struct event_handler {
 };
 
 int
+event_init(int epfd);
+
+int
 event_add(int epfd,
           int fd,
           uint32_t events,

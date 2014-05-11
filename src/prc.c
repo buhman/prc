@@ -16,8 +16,6 @@
 
 #define MAXEVENT 5
 
-sll_t *proto_cwq;
-
 extern struct epoll_event proto_cev;
 extern event_handler_t *proto_ceh;
 
@@ -25,7 +23,7 @@ int
 main(int argc,
      char **argv)
 {
-  int epfd, err, events;
+  int epfd, evfd, err, events, terminate = 1;
   struct epoll_event evs[MAXEVENT], *evi;
   event_handler_t *ehi;
 
@@ -38,6 +36,12 @@ main(int argc,
   } /* ... */
 
   {
+    evfd = event_init(epfd);
+    if (evfd < 0) {
+      perror("event_init()");
+      exit(EXIT_FAILURE);
+    }
+
     handler_init();
   }
 
@@ -53,7 +57,7 @@ main(int argc,
     sll_push(wq, prc_msg("USER buhmin foo bar :buhman's minion", NULL));
   }
 
-  while (true) {
+  while (terminate > 0) {
     events = epoll_wait(epfd, evs, MAXEVENT, -1);
     if (events < 0) {
       switch (errno) {
@@ -68,6 +72,12 @@ main(int argc,
     for (evi = evs; evi < evs + events; evi++) {
 
       ehi = (event_handler_t*)evi->data.ptr;
+
+      if (ehi->fd == evfd) {
+        // FIXME
+        terminate--;
+        continue;
+      }
 
       if (evi->events & EPOLLIN) {
         //fprintf(stderr, "evir fd: %d\n", ehi->fd);
@@ -131,6 +141,11 @@ main(int argc,
     err = term_stdout(epfd);
     if (err < 0)
       exit(EXIT_FAILURE);
+  }
+
+  {
+    close(epfd);
+    close(evfd);
   }
 
   return 0;
