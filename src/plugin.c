@@ -18,6 +18,15 @@ plugin_load(char *name)
   void *handle;
   char *error;
 
+  {
+    plugin_handle_ht_t *item;
+    HASH_FIND_STR(handle_head, name, item);
+    if (item) {
+      fprintf(stderr, "plugin [%s] already loaded\n", name);
+      return -1;
+    }
+  }
+
   handle = dlopen(name, RTLD_LAZY);
   if (handle == NULL) {
     fprintf(stderr, "%s\n", dlerror());

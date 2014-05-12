@@ -9,7 +9,8 @@ AM_LIBADD = \
 lib_LTLIBRARIES = \
 	libtime.la \
 	libctcp.la \
-	libfacts.la
+	libfacts.la \
+	libchess.la
 
 libtime_la_SOURCES = \
 	time.c
@@ -19,3 +20,6 @@ libfacts_la_SOURCES = \
 
 libctcp_la_SOURCES = \
 	ctcp.c
+
+libchess_la_SOURCES = \
+	chess.c chess.h
