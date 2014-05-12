@@ -14,16 +14,6 @@ This also implies the ability to perform complete redraws of contents
 upon TE resize events/etc.. in addition to redraws necessary to switch
 terminal output between buffers.
 
-### Plugin unload/reload
-
-The primary purpose of the plugin architecture has always been to
-allow addition of arbitrary functionality without necessitating a new
-instance of prc be compiled/started.
-
-The implementation would involve both a symbol-unloading and
-(automated?) un-registration procedure, followed by the loading of
-said new DSO.
-
 ### Plugin output; nick-directed
 
 This involves the addition of a new syntax element (with argument(s))
@@ -44,6 +34,31 @@ configuration file.
 
 Sandbox
 -------
+
+### Big reload
+
+Why stop at reloading plugins? prc could simply hand off socket fds
+to a new instance of prc--most of the startup process involves
+stateful server-side cruft, so this would effectively reduce full
+restart times to ~0 (compared to the current ~5+ second startup
+sequence).
+
+### Plugin architecture improvements
+
+libprc's prc_register and prc_deregister are as of now officially
+deprecated. It makes much more sense for the plugin to request
+registration in the namespace via a symbol table, which would be
+loaded and handled accordingly.
+
+The new architecture will focus on 'hooks' that plugins can use for
+initialization and cleanup while loading/unloading.
+
+### sll
+
+sll.c always was a lazy feature-less implementation that hardly did
+what I needed at the time. New requirements include full
+double-linking, FIFO operations, and arbitrary-index
+insertion/deletion.
 
 ### Global hashtable of hashtables
 
@@ -81,3 +96,19 @@ Sandbox
 libfacts currently registers `fact_find` and `fact_add`; it would make
 negligibly more sense if it registered only `fact`, where said
 meta-handler would pass off `find`, `add`, etc...
+
+### libchess
+
+during draw operations, the state-tracking operations will track
+pieces as individual pieces; this allows:
+
+* one-off highlighting of {last-moved piece,possible moves,*}
+
+* possible-move highlighting will predecate move-validation
+
+* move-validation will predicate less-explicit notations and more
+  flexible move parsing
+
+* game registration and multiple 'boards'/movesets
+
+* save/restore boards
