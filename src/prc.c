@@ -50,7 +50,7 @@ main(int argc,
 
     term_register(epfd);
 
-    proto_register(epfd, "irc.freenode.net", "6667", &wq);
+    proto_register(epfd, "dickson.freenode.net", "6667", &wq);
 
     sll_push(wq, prc_msg("CAP REQ :sasl", NULL));
     sll_push(wq, prc_msg("NICK buhmin", NULL));

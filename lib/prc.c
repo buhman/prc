@@ -64,9 +64,9 @@ prc_msg(char *cmd, ...)
 
   while (arg != NULL) {
 
-    /* HACK */
-    if (*arg == ':' && *(arg + 1) == '\0')
-      ibuf += sprintf(ibuf, ":");
+    /* DRAGONS */
+    if (*(arg + 1) == '\0')
+      ibuf += sprintf(ibuf, arg);
     else
       ibuf += sprintf(ibuf, "%s ", arg);
 
