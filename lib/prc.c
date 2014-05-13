@@ -25,9 +25,9 @@ prc_deregister(prc_plugin_ht_t **head, char *key)
     return;
   }
 
-  free(item);
-
   HASH_DELETE(hh, *head, item);
+
+  free(item);
 }
 
 char*
