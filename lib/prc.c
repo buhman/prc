@@ -40,9 +40,9 @@ prc_msg(char *cmd, ...)
 
     /* DRAGONS */
     if ((*arg == ':' || *arg == '\001') && *(arg + 1) == '\0')
-      ibuf += sprintf(ibuf, arg);
+      ibuf += snprintf(ibuf, MSG_SIZE, arg);
     else
-      ibuf += sprintf(ibuf, "%s ", arg);
+      ibuf += snprintf(ibuf, MSG_SIZE, "%s ", arg);
 
     arg = va_arg(ap, char*);
   }
@@ -52,4 +52,24 @@ prc_msg(char *cmd, ...)
   sprintf(ibuf - 1, "\r\n");
 
   return buf;
+}
+
+prc_plugin_msg_t*
+prc_msg2(char *cmd, char *target, char *format, ...)
+{
+  char *buf = malloc(MSG_SIZE);
+  prc_plugin_msg_t *msg = malloc(sizeof(prc_plugin_msg_t));
+
+  {
+    va_list ap;
+    va_start(ap, format);
+    vsnprintf(buf, MSG_SIZE, format, ap);
+    va_end(ap);
+  }
+
+  msg->cmd = cmd;
+  msg->buf = buf;
+  msg->target = target; // copy will happen in prc_msg
+
+  return msg;
 }

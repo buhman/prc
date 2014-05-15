@@ -18,6 +18,14 @@ struct prc_plugin_sym {
   prc_plugin_cmd_t *func;
 };
 
+typedef struct prc_plugin_msg prc_plugin_msg_t;
+
+struct prc_plugin_msg {
+  char *cmd;
+  char *target;
+  char *buf;
+};
+
 enum prefix_cp {
   NICK = 0,
   USER,
@@ -29,3 +37,6 @@ prc_prefix_parse(char *prefix, enum prefix_cp comp);
 
 char*
 prc_msg(char *cmd, ...);
+
+prc_plugin_msg_t*
+prc_msg2(char *cmd, char *target, char *format, ...);

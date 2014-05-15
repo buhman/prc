@@ -24,6 +24,8 @@ static handler_sym_t _handler_sym[] = {
   {"001", handler_welcome},
 };
 
+static sll_t *plugin_wq;
+
 void
 handler_init() {
 
@@ -42,6 +44,14 @@ handler_init() {
     //fprintf(stderr, "HHTH [%s] -> [%p]\n", hsti->name, *(void**)&hsti->func);
     HASH_ADD_KEYPTR(hh, handler_head, hsti->name, strlen(hsti->name), item);
   }
+
+  plugin_wq = calloc(1, sizeof(plugin_wq));
+}
+
+void
+handler_free()
+{
+  free(plugin_wq);
 }
 
 void
@@ -62,8 +72,6 @@ handler_lookup(char *command,
 static void
 handler_cap(sll_t *wq, char *prefix, char *buf) {
 
-  //fprintf(stderr, "handler_cap(): %s\n", buf);
-
   /* lazy */
 
   sll_push(wq, prc_msg("AUTHENTICATE PLAIN", NULL));
@@ -73,8 +81,6 @@ static void
 handler_authenticate(sll_t *wq, char *prefix, char *buf) {
 
   char *cred;
-
-  //fprintf(stderr, "auth()\n");
 
   /* lazy */
 
@@ -128,27 +134,41 @@ handler_privmsg(sll_t *wq, char *prefix, char *buf) {
   // plugin prefix
   switch (*msg) {
   case '\001':
-    plugin_lookup(wq, prefix, target, "ctcp", msg + 1);
+    plugin_lookup(plugin_wq, prefix, target, "ctcp", msg + 1);
     break;
   case '`':
-    plugin_lookup(wq, prefix, target, "fact_find", msg + 1);
+    plugin_lookup(plugin_wq, prefix, target, "fact_find", msg + 1);
     break;
   case '%':
-    plugin_lookup(wq, prefix, target, "fact_add", msg + 1);
+    plugin_lookup(plugin_wq, prefix, target, "fact_add", msg + 1);
     break;
   case '$':
     {
       tok = strchr(msg + 1, ' ');
       if (tok) {
         *tok = '\0';
-        plugin_lookup(wq, prefix, target, msg + 1, tok + 1);
+        plugin_lookup(plugin_wq, prefix, target, msg + 1, tok + 1);
       }
       else
-        plugin_lookup(wq, prefix, target, msg + 1, NULL);
+        plugin_lookup(plugin_wq, prefix, target, msg + 1, NULL);
     }
     break;
   case '#':
-    plugin_cmd(wq, prefix, target, msg + 1);
+    plugin_cmd(plugin_wq, prefix, target, msg + 1);
     break;
   }
+
+  {
+    prc_plugin_msg_t *msg;
+
+    while (plugin_wq->head) {
+
+      sll_pop(plugin_wq, (void**)(&msg));
+
+      sll_push(wq, prc_msg(msg->cmd, msg->target, msg->buf, NULL));
+
+      free(msg->buf);
+      free(msg);
+    }
+  } /* ... */
 }

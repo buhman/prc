@@ -178,8 +178,10 @@ plugin_lookup(sll_t *wq, char *prefix, char *target,
 
   HASH_FIND(hh, plugin_head, cmd, strlen(cmd), item);
 
-  if (item != NULL)
-    (item->func)(wq, prefix, target, args);
+  if (item == NULL)
+    return;
+
+  (item->func)(wq, prefix, target, args);
 }
 
 void
@@ -213,7 +215,7 @@ plugin_cmd(sll_t *wq, char *prefix, char *target, char *buf)
     return;
 
   if (err < 0)
-    sll_push(wq, prc_msg("PRIVMSG", target, "[failure]", NULL));
+    sll_push(wq, prc_msg2("PRIVMSG", target, "[failure]"));
   else
-    sll_push(wq, prc_msg("PRIVMSG", target, "[success]", NULL));
+    sll_push(wq, prc_msg2("PRIVMSG", target, "[success]"));
 }

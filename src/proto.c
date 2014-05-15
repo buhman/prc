@@ -148,7 +148,7 @@ proto_write(struct epoll_event *ev)
 
   while (eh->wq->head) {
 
-    sll_pop(eh->wq, &buf);
+    sll_pop(eh->wq, (void**)(&buf));
 
     term_printf(buf);
 

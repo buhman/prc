@@ -144,6 +144,8 @@ main(int argc,
   }
 
   {
+    handler_free();
+
     close(epfd);
     close(evfd);
   }

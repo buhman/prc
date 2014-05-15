@@ -22,6 +22,9 @@ void
 handler_init();
 
 void
+handler_free();
+
+void
 handler_lookup(char *command,
                sll_t *wq,
                char *prefix,

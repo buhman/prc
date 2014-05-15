@@ -198,7 +198,7 @@ term_write(struct epoll_event *ev)
 
   while (term_wq->head) {
 
-    sll_pop(term_wq, &buf);
+    sll_pop(term_wq, (void**)(&buf));
 
     write(STDOUT_FILENO, buf, strlen(buf));
 

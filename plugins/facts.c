@@ -19,19 +19,14 @@ static char *db_path;
 static void
 facts_find_handler(sll_t *wq, char *prefix, char *target, char *tok)
 {
-  char *fact, *pmsg;
+  char *fact;
 
   {
     fact = facts_get(tok);
 
     if (fact) {
-      pmsg = malloc(strlen(fact) + 2);
-      strcpy(pmsg + 1, fact);
-      *pmsg = ':';
-
-      sll_push(wq, prc_msg("PRIVMSG", target, pmsg, NULL));
+      sll_push(wq, prc_msg2("PRIVMSG", target, ":%s", fact));
       free(fact);
-      free(pmsg);
     }
     else
       fprintf(stderr, "FACT [%s] not found\n", tok);
@@ -56,7 +51,7 @@ facts_add_handler(sll_t *wq, char *prefix, char *target, char *tok)
   else
     status = ":[failure]";
 
-  sll_push(wq, prc_msg("PRIVMSG", target, status, NULL));
+  sll_push(wq, prc_msg2("PRIVMSG", target, status));
 }
 
 static int

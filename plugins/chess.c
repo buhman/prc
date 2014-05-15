@@ -30,16 +30,15 @@ autoprint_cmd(sll_t *wq, char *prefix, char* target, char *args)
 {
   autoprint = !autoprint;
   if (autoprint)
-    sll_push(wq, prc_msg("PRIVMSG", target, ":[enabled]", NULL));
+    sll_push(wq, prc_msg2("PRIVMSG", target, ":[enabled]", NULL));
   else
-    sll_push(wq, prc_msg("PRIVMSG", target, ":[disabled]", NULL));
+    sll_push(wq, prc_msg2("PRIVMSG", target, ":[disabled]", NULL));
 }
 
 static void
 print_cmd(sll_t *wq, char *prefix, char* target, char *args)
 {
   char **b, **bi, **bii, *move;
-  char temp[2];
 
   b = malloc(sizeof(board));
   for (bii = b, bi = board; bii < b + 8; bi++, bii++)
@@ -64,14 +63,13 @@ print_cmd(sll_t *wq, char *prefix, char* target, char *args)
   }
 
   for (bi = b; bi < b + 8; bi++) {
-    snprintf(temp, 2, "%d", (int)(8 - (bi - b)));
-    sll_push(wq, prc_msg("PRIVMSG", target, ":", temp, *bi,  NULL));
+    sll_push(wq, prc_msg2("PRIVMSG", target, ":%d %s", (int)(8 - (bi - b)), *bi));
     free(*bi);
   }
 
   free(b);
 
-  sll_push(wq, prc_msg("PRIVMSG", target, ":  a b c d e f g h", NULL));
+  sll_push(wq, prc_msg2("PRIVMSG", target, ":  a b c d e f g h"));
 }
 
 static void
@@ -116,7 +114,7 @@ move_cmd(sll_t *wq, char *prefix, char* target, char *args)
   }
 
  invalid:
-  sll_push(wq, prc_msg("PRIVMSG", target, "[invalid]", NULL));
+  sll_push(wq, prc_msg2("PRIVMSG", target, "[invalid]"));
 }
 
 static void
