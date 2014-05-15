@@ -8,6 +8,14 @@
 
 #include "facts.h"
 
+static prc_plugin_cmd_t facts_find_handler;
+static prc_plugin_cmd_t facts_add_handler;
+
+prc_plugin_sym_t prc_sym[] = {
+  {"fact_find", facts_find_handler},
+  {"fact_add", facts_add_handler},
+};
+
 static fact_ht_t *facts_head;
 static char *db_path;
 
@@ -54,7 +62,7 @@ facts_add_handler(sll_t *wq, char *prefix, char *target, char *tok)
   sll_push(wq, prc_msg("PRIVMSG", target, status, NULL));
 }
 
-int
+static int
 facts_add(char *key,
           char *fact)
 {
@@ -102,7 +110,7 @@ facts_add(char *key,
   return 0;
 }
 
-char *
+static char *
 facts_get(char *key)
 {
   fact_ht_t *item;
@@ -116,7 +124,7 @@ facts_get(char *key)
   free(item);
 }
 
-int
+static int
 facts_init_ht(char *path)
 {
   int dbfd, err;
@@ -190,7 +198,7 @@ facts_init_ht(char *path)
   return 0;
 }
 
-void
+static void
 facts_destroy_ht()
 {
   static fact_ht_t *item, *tmp;
@@ -202,26 +210,24 @@ facts_destroy_ht()
   }
 }
 
-void
-prc_reg(prc_plugin_ht_t **plugin_head)
+int
+prc_ctor()
 {
   int err;
 
   err = facts_init_ht("db");
   if (err < 0) {
     fprintf(stderr, "facts_init_ht()\n");
-    return;
+    return -1;
   }
 
-  prc_register(plugin_head, "fact_find", facts_find_handler);
-  prc_register(plugin_head, "fact_add", facts_add_handler);
+  return 0;
 }
 
-void
-prc_dereg(prc_plugin_ht_t **plugin_head)
+int
+prc_dtor()
 {
   facts_destroy_ht();
 
-  prc_deregister(plugin_head, "fact_find");
-  prc_deregister(plugin_head, "fact_add");
+  return 0;
 }

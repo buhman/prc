@@ -4,32 +4,6 @@
 
 #include "prc.h"
 
-void
-prc_register(prc_plugin_ht_t **head, char *key, prc_plugin_cmd_t *func)
-{
-  prc_plugin_ht_t *item;
-  item = malloc(sizeof(prc_plugin_ht_t));
-  item->func = func;
-
-  HASH_ADD_KEYPTR(hh, *head, key, strlen(key), item);
-}
-
-void
-prc_deregister(prc_plugin_ht_t **head, char *key)
-{
-  prc_plugin_ht_t *item;
-
-  HASH_FIND_STR(*head, key, item);
-  if (!item) {
-    fprintf(stderr, "attempt to deregister unregistered [%s]\n", key);
-    return;
-  }
-
-  HASH_DELETE(hh, *head, item);
-
-  free(item);
-}
-
 char*
 prc_prefix_parse(char *prefix, enum prefix_cp comp)
 {
@@ -65,7 +39,7 @@ prc_msg(char *cmd, ...)
   while (arg != NULL) {
 
     /* DRAGONS */
-    if (*(arg + 1) == '\0')
+    if ((*arg == ':' || *arg == '\001') && *(arg + 1) == '\0')
       ibuf += sprintf(ibuf, arg);
     else
       ibuf += sprintf(ibuf, "%s ", arg);

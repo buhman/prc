@@ -3,6 +3,18 @@
 
 #include "chess.h"
 
+static prc_plugin_cmd_t autoprint_cmd;
+static prc_plugin_cmd_t print_cmd;
+static prc_plugin_cmd_t move_cmd;
+static prc_plugin_cmd_t undo_cmd;
+
+prc_plugin_sym_t prc_sym[] = {
+  {"autoprint", autoprint_cmd},
+  {"print", print_cmd},
+  {"move", move_cmd},
+  {"undo", undo_cmd},
+};
+
 static char *board[8] = {
   B_RO " " B_KN " " B_BI " " B_QU " " B_KI " " B_BI " " B_KN " " B_RO, //8
   B_PA " " B_PA " " B_PA " " B_PA " " B_PA " " B_PA " " B_PA " " B_PA,
@@ -14,11 +26,11 @@ static char *board[8] = {
   W_RO " " W_KN " " W_BI " " W_QU " " W_KI " " W_BI " " W_KN " " W_RO,
 };
 
-sll_t *moves;
+static sll_t *moves;
 
-int autoprint = 0;
+static int autoprint = 0;
 
-void
+static void
 autoprint_cmd(sll_t *wq, char *prefix, char* target, char *args)
 {
   autoprint = !autoprint;
@@ -28,7 +40,7 @@ autoprint_cmd(sll_t *wq, char *prefix, char* target, char *args)
     sll_push(wq, prc_msg("PRIVMSG", target, ":[disabled]", NULL));
 }
 
-void
+static void
 print_cmd(sll_t *wq, char *prefix, char* target, char *args)
 {
   char **b, **bi, **bii, *move;
@@ -67,17 +79,24 @@ print_cmd(sll_t *wq, char *prefix, char* target, char *args)
   sll_push(wq, prc_msg("PRIVMSG", target, ":  a b c d e f g h", NULL));
 }
 
-void
+static void
 move_cmd(sll_t *wq, char *prefix, char* target, char *args)
 {
   //a1h8
   //97 49 104 56;
   //0,7 -> 7,0
 
-  char *pos;
+  char *pos, *tok;
   int c; // component
 
+  if (!args)
+    goto invalid;
+
   pos = malloc(sizeof(char[4]));
+
+  tok = strchr(args, ' ');
+  if (tok)
+    *tok = '\0';
 
   if (strlen(args) == 4) {
 
@@ -105,7 +124,7 @@ move_cmd(sll_t *wq, char *prefix, char* target, char *args)
   sll_push(wq, prc_msg("PRIVMSG", target, "[invalid]", NULL));
 }
 
-void
+static void
 undo_cmd(sll_t *wq, char *prefix, char* target, char *args)
 {
   sll_link_t *li, *li_prev = NULL;
@@ -134,24 +153,18 @@ undo_cmd(sll_t *wq, char *prefix, char* target, char *args)
     print_cmd(wq, prefix, target, args);
 }
 
-void
-prc_reg(prc_plugin_ht_t **plugin_head)
+int
+prc_ctor()
 {
   moves = calloc(1, sizeof(sll_t));
 
-  prc_register(plugin_head, "autoprint", autoprint_cmd);
-  prc_register(plugin_head, "print", print_cmd);
-  prc_register(plugin_head, "move", move_cmd);
-  prc_register(plugin_head, "undo", undo_cmd);
+  return 0;
 }
 
-void
-prc_dereg(prc_plugin_ht_t **plugin_head)
+int
+prc_dtor()
 {
-  prc_deregister(plugin_head, "autoprint");
-  prc_deregister(plugin_head, "print");
-  prc_deregister(plugin_head, "move");
-  prc_deregister(plugin_head, "undo");
-
   free(moves);
+
+  return 0;
 }

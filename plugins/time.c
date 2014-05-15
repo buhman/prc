@@ -3,7 +3,14 @@
 
 #include "prc.h"
 
-void
+static prc_plugin_cmd_t time_cmd;
+
+prc_plugin_sym_t prc_sym[] = {
+  {"time", time_cmd},
+  {NULL},
+};
+
+static void
 time_cmd(sll_t *wq, char *prefix, char* target, char *args)
 {
   char buf[20];
@@ -15,14 +22,15 @@ time_cmd(sll_t *wq, char *prefix, char* target, char *args)
   sll_push(wq, prc_msg("PRIVMSG", target, buf, NULL));
 }
 
-void
-prc_reg(prc_plugin_ht_t **plugin_head)
+/* {,de}initialization is not required and can be omitted completely */
+int
+prc_ctor()
 {
-  prc_register(plugin_head, "time", time_cmd);
+  return 0;
 }
 
-void
-prc_dereg(prc_plugin_ht_t **plugin_head)
+int
+prc_dtor()
 {
-  prc_deregister(plugin_head, "time");
+  return 0;
 }
