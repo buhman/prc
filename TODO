@@ -23,6 +23,19 @@ nicks with plugin output.
 This should be implemented by plugin.c, and not by, e.g, each
 individual plugin.
 
+### Plugin write queue
+
+Instead of plugins writing arbitrary messages to the real write queue,
+it is intended for plugin.c to marshall requests (in order to
+accomplish things like the above).
+
+### Plugin command chaining
+
+Create a new syntax element that both allows multiple calls to the
+same handler and allows multiple handlers to be called in a single
+message (without having to implement similar looping in each plugin
+individually).
+
 ### Runtime configuration
 
 Currently most "configuration" such as credentials, servers to connect
@@ -42,16 +55,6 @@ to a new instance of prc--most of the startup process involves
 stateful server-side cruft, so this would effectively reduce full
 restart times to ~0 (compared to the current ~5+ second startup
 sequence).
-
-### Plugin architecture improvements
-
-libprc's prc_register and prc_deregister are as of now officially
-deprecated. It makes much more sense for the plugin to request
-registration in the namespace via a symbol table, which would be
-loaded and handled accordingly.
-
-The new architecture will focus on 'hooks' that plugins can use for
-initialization and cleanup while loading/unloading.
 
 ### sll
 
@@ -75,6 +78,12 @@ of it just to find the real problem.
 
 The buhman-hashtable doesn't even need to be quite as fast, etc.. as
 uthash, it just needs to be buhman.
+
+### Plugin sandboxing/IPC
+
+A plugin that {segfaults,does invalid/evil things with memory,etc}
+also causes prc itself to self-destruct. Instead plugins should run in
+their own process and do IPC with prc.
 
 Plugins
 =======
@@ -112,3 +121,9 @@ pieces as individual pieces; this allows:
 * game registration and multiple 'boards'/movesets
 
 * save/restore boards
+
+### libgitcd
+
+In its own special thread, this would wait for a related git
+post-commit hook to inform it of new commits; it would then retrieve
+said commit messages, and regurgitate to the channel.
