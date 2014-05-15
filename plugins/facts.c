@@ -25,7 +25,7 @@ facts_find_handler(sll_t *wq, char *prefix, char *target, char *tok)
     fact = facts_get(tok);
 
     if (fact) {
-      sll_push(wq, prc_msg2("PRIVMSG", target, ":%s", fact));
+      sll_push(wq, prc_msg2("PRIVMSG", target, "%s", fact));
       free(fact);
     }
     else
@@ -47,9 +47,9 @@ facts_add_handler(sll_t *wq, char *prefix, char *target, char *tok)
     fprintf(stderr, "FACTADD: no fact");
 
   if (fact != NULL && key != NULL)
-    status = facts_add(key, fact) >= 0 ? ":[success]" : ":[failure]";
+    status = facts_add(key, fact) >= 0 ? "[success]" : "[failure]";
   else
-    status = ":[failure]";
+    status = "[failure]";
 
   sll_push(wq, prc_msg2("PRIVMSG", target, status));
 }

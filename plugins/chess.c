@@ -30,9 +30,9 @@ autoprint_cmd(sll_t *wq, char *prefix, char* target, char *args)
 {
   autoprint = !autoprint;
   if (autoprint)
-    sll_push(wq, prc_msg2("PRIVMSG", target, ":[enabled]", NULL));
+    sll_push(wq, prc_msg2("PRIVMSG", target, "[enabled]", NULL));
   else
-    sll_push(wq, prc_msg2("PRIVMSG", target, ":[disabled]", NULL));
+    sll_push(wq, prc_msg2("PRIVMSG", target, "[disabled]", NULL));
 }
 
 static void
@@ -63,13 +63,13 @@ print_cmd(sll_t *wq, char *prefix, char* target, char *args)
   }
 
   for (bi = b; bi < b + 8; bi++) {
-    sll_push(wq, prc_msg2("PRIVMSG", target, ":%d %s", (int)(8 - (bi - b)), *bi));
+    sll_push(wq, prc_msg2("PRIVMSG", target, "%d %s", (int)(8 - (bi - b)), *bi));
     free(*bi);
   }
 
   free(b);
 
-  sll_push(wq, prc_msg2("PRIVMSG", target, ":  a b c d e f g h"));
+  sll_push(wq, prc_msg2("PRIVMSG", target, "  a b c d e f g h"));
 }
 
 static void

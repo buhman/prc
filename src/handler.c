@@ -113,7 +113,7 @@ handler_welcome(sll_t *wq, char *prefix, char *buf) {
 static void
 handler_privmsg(sll_t *wq, char *prefix, char *buf) {
 
-  char *tok, *target, *msg;
+  char *tok, *target, *msg, *redirect;
 
   tok = strchr(buf, ' ');
   if (!tok) {
@@ -130,6 +130,10 @@ handler_privmsg(sll_t *wq, char *prefix, char *buf) {
     term_printf("privmsg(): no msg: [%s] [%s] [%s]", prefix, target, tok + 1);
     return;
   }
+
+  redirect = strchr(msg, '>');
+  if (redirect)
+    *redirect = '\0';
 
   // plugin prefix
   switch (*msg) {
@@ -165,7 +169,15 @@ handler_privmsg(sll_t *wq, char *prefix, char *buf) {
 
       sll_pop(plugin_wq, (void**)(&msg));
 
-      sll_push(wq, prc_msg(msg->cmd, msg->target, msg->buf, NULL));
+      if (redirect && *(redirect + 1) == '>')
+        sll_push(wq, prc_msg3("%s %s :%s\r\n", msg->cmd, redirect + 2,
+                              msg->buf));
+      else if (redirect)
+        sll_push(wq, prc_msg3("%s %s :%s: %s\r\n", msg->cmd, msg->target,
+                             redirect + 1, msg->buf));
+      else
+        sll_push(wq, prc_msg(msg->cmd, msg->target, ":", msg->buf, NULL));
+
 
       free(msg->buf);
       free(msg);

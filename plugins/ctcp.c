@@ -28,14 +28,14 @@ ctcp_handler(sll_t *wq, char *prefix, char *target, char *args)
 
   if (strcmp("VERSION", args) == 0)
     sll_push(wq, prc_msg2("NOTICE", prc_prefix_parse(prefix, NICK),
-                         ":\001VERSION Suck my cock\001", NULL));
+                         "\001VERSION Suck my cock\001", NULL));
   else if (strcmp("FINGER", args) == 0)
     sll_push(wq, prc_msg2("NOTICE", prc_prefix_parse(prefix, NICK),
-                         ":\001FINGER No thanks\001", NULL));
+                         "\001FINGER No thanks\001", NULL));
   else if (strcmp("SOURCE", args) == 0)
     sll_push(wq, prc_msg2("NOTICE", prc_prefix_parse(prefix, NICK),
-                         ":\001SOURCE https://buhman.org/cgit/prc.git\001", NULL));
+                         "\001SOURCE https://buhman.org/cgit/prc.git\001", NULL));
   else if (strcmp("PING", args) == 0 && ts)
     sll_push(wq, prc_msg2("NOTICE", prc_prefix_parse(prefix, NICK),
-                         ":\001PING", ts + 1, "\001", NULL));
+                         "\001PING", ts + 1, "\001", NULL));
 }

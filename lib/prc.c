@@ -73,3 +73,18 @@ prc_msg2(char *cmd, char *target, char *format, ...)
 
   return msg;
 }
+
+char*
+prc_msg3(char *format, ...)
+{
+  char *buf = malloc(MSG_SIZE);
+
+  {
+    va_list ap;
+    va_start(ap, format);
+    vsnprintf(buf, MSG_SIZE, format, ap);
+    va_end(ap);
+  }
+
+  return buf;
+}

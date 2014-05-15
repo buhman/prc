@@ -40,3 +40,6 @@ prc_msg(char *cmd, ...);
 
 prc_plugin_msg_t*
 prc_msg2(char *cmd, char *target, char *format, ...);
+
+char*
+prc_msg3(char *format, ...);
