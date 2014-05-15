@@ -2,6 +2,9 @@
 
 #include "uthash.h"
 
+static prc_plugin_cmd_t facts_find_handler;
+static prc_plugin_cmd_t facts_add_handler;
+
 typedef struct fact_ht fact_ht_t;
 
 struct fact_ht {

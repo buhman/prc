@@ -3,11 +3,6 @@
 
 #include "chess.h"
 
-static prc_plugin_cmd_t autoprint_cmd;
-static prc_plugin_cmd_t print_cmd;
-static prc_plugin_cmd_t move_cmd;
-static prc_plugin_cmd_t undo_cmd;
-
 prc_plugin_sym_t prc_sym[] = {
   {"autoprint", autoprint_cmd},
   {"print", print_cmd},

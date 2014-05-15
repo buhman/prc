@@ -16,6 +16,11 @@
 
 #define ELPS "\u2610"
 
+static prc_plugin_cmd_t autoprint_cmd;
+static prc_plugin_cmd_t print_cmd;
+static prc_plugin_cmd_t move_cmd;
+static prc_plugin_cmd_t undo_cmd;
+
 enum position {
   X1 = 0,
   Y1,

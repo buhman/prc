@@ -8,9 +8,6 @@
 
 #include "facts.h"
 
-static prc_plugin_cmd_t facts_find_handler;
-static prc_plugin_cmd_t facts_add_handler;
-
 prc_plugin_sym_t prc_sym[] = {
   {"fact_find", facts_find_handler},
   {"fact_add", facts_add_handler},
