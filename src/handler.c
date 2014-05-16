@@ -169,7 +169,7 @@ handler_privmsg(sll_t *wq, char *prefix, char *buf)
     *redirect = '\0';
 
   {
-    char *d1, *d2, *tok1, *dup;
+    char *d1, *d2, *tok1;
     d1 = strchr(msg + 1, '[');
     if (d1) {
       d2 = strchr(d1 + 1, ']');
@@ -178,22 +178,23 @@ handler_privmsg(sll_t *wq, char *prefix, char *buf)
         return;
       }
 
-      *d2 = '\0';
-
       tok = d1 + 1;
 
       while (tok1 != d2) {
 
-        tok1 = strchr(tok, ',');
+        tok1 = memchr(tok, ',', d2 - tok);
         if (!tok1)
           tok1 = d2;
 
-        memmove(d1, tok, tok1 - tok);
-        *(d1 + (tok1 - tok)) = '\0';
+        {
+          char *dup;
+          dup = strdup(msg);
+          memcpy(dup + (d1 - msg), tok, tok1 - tok);
+          strcpy(dup + (d1 - msg) + (tok1 - tok), d2 + 1);
 
-        dup = strdup(msg);
-        plugin_switch(prefix, target, dup, dup + 1);
-        free(dup);
+          plugin_switch(prefix, target, dup, dup + 1);
+          free(dup);
+        } /* ... */
 
         tok = tok1 + 1;
       }
