@@ -21,6 +21,9 @@ facts_find_handler(sll_t *wq, char *prefix, char *target, char *tok)
 {
   char *fact;
 
+  if (!tok)
+    return;
+
   {
     fact = facts_get(tok);
 
@@ -37,6 +40,9 @@ static void
 facts_add_handler(sll_t *wq, char *prefix, char *target, char *tok)
 {
   char *key, *fact, *status, *sp;
+
+  if (!tok)
+    return;
 
   key = strtok_r(tok, "`", &sp);
   if (key == NULL)
