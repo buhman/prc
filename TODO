@@ -14,28 +14,6 @@ This also implies the ability to perform complete redraws of contents
 upon TE resize events/etc.. in addition to redraws necessary to switch
 terminal output between buffers.
 
-### Plugin output; nick-directed
-
-This involves the addition of a new syntax element (with argument(s))
-that would rewrite plugin output to do things like 'ping' particular
-nicks with plugin output.
-
-This should be implemented by plugin.c, and not by, e.g, each
-individual plugin.
-
-### Plugin write queue
-
-Instead of plugins writing arbitrary messages to the real write queue,
-it is intended for plugin.c to marshall requests (in order to
-accomplish things like the above).
-
-### Plugin command chaining
-
-Create a new syntax element that both allows multiple calls to the
-same handler and allows multiple handlers to be called in a single
-message (without having to implement similar looping in each plugin
-individually).
-
 ### Runtime configuration
 
 Currently most "configuration" such as credentials, servers to connect
@@ -127,3 +105,8 @@ pieces as individual pieces; this allows:
 In its own special thread, this would wait for a related git
 post-commit hook to inform it of new commits; it would then retrieve
 said commit messages, and regurgitate to the channel.
+
+### libsteal
+
+Interpret '!' commands (directed at phrik), and add whatever phrik
+replies with to the factdb.
