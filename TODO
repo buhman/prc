@@ -34,13 +34,6 @@ stateful server-side cruft, so this would effectively reduce full
 restart times to ~0 (compared to the current ~5+ second startup
 sequence).
 
-### sll
-
-sll.c always was a lazy feature-less implementation that hardly did
-what I needed at the time. New requirements include full
-double-linking, FIFO operations, and arbitrary-index
-insertion/deletion.
-
 ### Global hashtable of hashtables
 
 The global hashtable would be implemented as a singleton--libprc would
