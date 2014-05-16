@@ -32,7 +32,11 @@ list_assert(const dll_t *ol)
 static void
 link_assert(const dll_link_t *li)
 {
-  /* not really needed until we support insertions */
+  assert(!li->prev || (li->prev->next == li));
+
+  assert(!li->next || (li->next->prev == li));
+
+  /* that's it? really? I think so.. provided list_assert() is also true */
 }
 #endif
 
@@ -67,7 +71,7 @@ dll_enq(dll_t *ol,
 
     /* this is at the end of the list, next is always NULL */
     li->next = NULL;
-  } /* .. */
+  } /* ... */
 
 #ifdef DEBUG_ASSERT
   list_assert(ol);
@@ -100,7 +104,7 @@ dll_pop(dll_t *ol)
     /* the prev element no longer exists */
     if (li->next)
       li->next->prev = NULL;
-  }
+  } /* ... */
 
 #ifdef DEBUG_ASSERT
   list_assert(ol);
@@ -143,9 +147,82 @@ dll_push(dll_t *ol,
 
     /* prev does not exist */
     li->prev = NULL;
-  }
+  } /* ... */
 
 #ifdef DEBUG_ASSERT
   list_assert(ol);
+#endif
+}
+
+/* remove link from list by updating neighboring links */
+void
+dll_remove(dll_t *ol,
+           dll_link_t *li)
+{
+#ifdef DEBUG_ASSERT
+  list_assert(ol);
+  link_assert(li);
+#endif
+
+  {
+    /* previous link's next should be this link's next */
+    if (li->prev)
+      li->prev->next = li->next;
+    else
+      ol->head = li->next;
+
+    /* next link's prev should be this link's prev */
+    if (li->next)
+      li->next->prev = li->prev;
+    else
+      ol->tail = li->prev;
+  } /* ... */
+
+#ifdef DEBUG_ASSERT
+  list_assert(ol);
+  link_assert(li->next);
+  link_assert(li->prev);
+#endif
+
+  free(li);
+}
+
+/* insert new link after given link (->next) */
+
+void
+dll_insert(dll_t *ol,
+           dll_link_t *li,
+           void *buf)
+{
+  dll_link_t *nli;
+
+  nli = malloc(sizeof(dll_link_t));
+  nli->buf = buf;
+
+#ifdef DEBUG_ASSERT
+  list_assert(ol);
+  link_assert(li);
+#endif
+
+  {
+    /* the new link's prev is this link */
+    nli->prev = li;
+
+    /* the new link's next is this link's next link */
+    nli->next = li->next;
+
+    /* the current next's prev is now this link */
+    if (li->next)
+      li->next->prev = nli;
+    else
+      ol->tail = nli;
+
+    li->next = nli;
+  } /* ... */
+
+#ifdef DEBUG_ASSERT
+  list_assert(ol);
+  link_assert(li);
+  link_assert(nli);
 #endif
 }

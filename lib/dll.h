@@ -24,3 +24,12 @@ dll_push(dll_t *ol,
 
 void*
 dll_pop(dll_t *ol);
+
+void
+dll_remove(dll_t *ol,
+           dll_link_t *li);
+
+void
+dll_insert(dll_t *ol,
+           dll_link_t *li,
+           void *buf);
