@@ -171,7 +171,7 @@ plugin_unload(char *name)
 }
 
 void
-plugin_lookup(sll_t *wq, char *prefix, char *target,
+plugin_lookup(dll_t *wq, char *prefix, char *target,
               char *cmd, char *args) {
 
   plugin_ht_t *item;
@@ -185,7 +185,7 @@ plugin_lookup(sll_t *wq, char *prefix, char *target,
 }
 
 void
-plugin_cmd(sll_t *wq, char *prefix, char *target, char *buf)
+plugin_cmd(dll_t *wq, char *prefix, char *target, char *buf)
 {
   int err;
   char *cmd, *tok, *args;
@@ -215,7 +215,7 @@ plugin_cmd(sll_t *wq, char *prefix, char *target, char *buf)
     return;
 
   if (err < 0)
-    sll_push(wq, prc_msg2("PRIVMSG", target, "[failure]"));
+    dll_enq(wq, prc_msg2("PRIVMSG", target, "[failure]"));
   else
-    sll_push(wq, prc_msg2("PRIVMSG", target, "[success]"));
+    dll_enq(wq, prc_msg2("PRIVMSG", target, "[success]"));
 }

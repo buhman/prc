@@ -10,7 +10,7 @@ prc_plugin_sym_t prc_sym[] = {
 };
 
 static void
-time_cmd(sll_t *wq, char *prefix, char* target, char *args)
+time_cmd(dll_t *wq, char *prefix, char* target, char *args)
 {
-  sll_push(wq, prc_msg2("PRIVMSG", target, "%ld", (long)time(NULL)));
+  dll_enq(wq, prc_msg2("PRIVMSG", target, "%ld", (long)time(NULL)));
 }

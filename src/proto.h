@@ -1,13 +1,13 @@
 #pragma once
 
 #include <sys/epoll.h>
-#include "sll.h"
+#include "dll.h"
 
 int
 proto_register(int epfd,
                char *node,
                char *service,
-               sll_t **owq);
+               dll_t **owq);
 
 int
 proto_connect(const char *node,

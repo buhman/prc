@@ -7,7 +7,7 @@
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 
-#include "sll.h"
+#include "dll.h"
 #include "event.h"
 
 static int evfd;
@@ -69,7 +69,7 @@ event_add(int epfd,
           uint32_t events,
           eh_fptr_t *rf,
           eh_fptr_t *wf,
-          sll_t *wq,
+          dll_t *wq,
           struct epoll_event *oev)
 {
   int err;

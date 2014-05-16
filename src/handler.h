@@ -2,7 +2,7 @@
 
 #include "uthash.h"
 
-typedef void (cmd_handler_t)(sll_t *wq, char *prefix, char *buf);
+typedef void (cmd_handler_t)(dll_t *wq, char *prefix, char *buf);
 
 typedef struct handler_ht handler_ht_t;
 
@@ -26,6 +26,6 @@ handler_free();
 
 void
 handler_lookup(char *command,
-               sll_t *wq,
+               dll_t *wq,
                char *prefix,
                char *sp);

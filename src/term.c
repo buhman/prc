@@ -18,7 +18,7 @@
 #include "prc.h"
 
 static struct winsize ws;
-sll_t *term_wq;
+dll_t *term_wq;
 static struct epoll_event stdout_ev;
 
 static char *line_buf, *line_bufi;
@@ -55,7 +55,7 @@ term_register(int epfd)
 {
   int err;
 
-  term_wq = calloc(1, sizeof(sll_t));
+  term_wq = calloc(1, sizeof(dll_t));
 
   err = term_setup(term_wq);
   if (err < 0) {
@@ -105,13 +105,13 @@ term_read(struct epoll_event *ev)
       term_parse();
 
       snprintf(scratch, MSG_SIZE, "" FORCE_CURSORd ERASE_LINE, ws.ws_row);
-      sll_push(term_wq, strdup(scratch));
+      dll_enq(term_wq, strdup(scratch));
 
       break;
     case '\b':
     case 127:
       if (line_bufi > line_buf) {
-        sll_push(term_wq, strdup(BACKSPACE));
+        dll_enq(term_wq, strdup(BACKSPACE));
         line_bufi--;
       }
       break;
@@ -120,7 +120,7 @@ term_read(struct epoll_event *ev)
     default:
       *line_bufi = *bufi;
       line_bufi++;
-      sll_push(term_wq, strndup(bufi, 1));
+      dll_enq(term_wq, strndup(bufi, 1));
       break;
     }
   }
@@ -136,8 +136,8 @@ term_me()
   if (ttarget) {
     tok = strchr(line_buf, ' ');
     if (tok)
-      sll_push(proto_ceh->wq, prc_msg("PRIVMSG", ttarget,
-                                      ":\001ACTION", tok + 1, "\001", NULL));
+      dll_enq(proto_ceh->wq, prc_msg("PRIVMSG", ttarget,
+                                     ":\001ACTION", tok + 1, "\001", NULL));
   }
   else
     return -1;
@@ -149,7 +149,7 @@ static int
 term_msg()
 {
   if (ttarget)
-    sll_push(proto_ceh->wq, prc_msg("PRIVMSG", ttarget, ":", line_buf, NULL));
+    dll_enq(proto_ceh->wq, prc_msg("PRIVMSG", ttarget, ":", line_buf, NULL));
   else
     return -1;
 
@@ -182,7 +182,7 @@ term_parse()
   else if (memcmp(line_buf, "/tgt", 4) == 0)
     term_target();
   else if (*line_buf == ':')
-    sll_push(proto_ceh->wq, prc_msg(line_buf + 1, NULL));
+    dll_enq(proto_ceh->wq, prc_msg(line_buf + 1, NULL));
   else
     term_msg();
 
@@ -196,9 +196,7 @@ term_write(struct epoll_event *ev)
 {
   char *buf;
 
-  while (term_wq->head) {
-
-    sll_pop(term_wq, (void**)(&buf));
+  while ((buf = dll_pop(term_wq)) != NULL) {
 
     write(STDOUT_FILENO, buf, strlen(buf));
 
@@ -224,7 +222,7 @@ term_printf(char *format, ...)
   snprintf(scratch, MSG_SIZE,
            "" ERASE_LINE SCROLL_DOWN FORCE_CURSORd CURSOR_UP "%s" FORCE_CURSORd "%s",
            ws.ws_row, buf, ws.ws_row, line_buf);
-  sll_push(term_wq, strdup(scratch));
+  dll_enq(term_wq, strdup(scratch));
 
   free(buf);
 }
