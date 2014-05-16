@@ -25,7 +25,7 @@ static handler_sym_t _handler_sym[] = {
   {"001", handler_welcome},
 };
 
-static sll_t *plugin_wq;
+static dll_t *plugin_wq;
 
 void
 handler_init()
@@ -57,7 +57,7 @@ handler_free()
 
 void
 handler_lookup(char *command,
-               sll_t *wq,
+               dll_t *wq,
                char *prefix,
                char *buf)
 {
@@ -70,15 +70,15 @@ handler_lookup(char *command,
 }
 
 static void
-handler_cap(sll_t *wq, char *prefix, char *buf)
+handler_cap(dll_t *wq, char *prefix, char *buf)
 {
   /* lazy */
 
-  sll_push(wq, prc_msg("AUTHENTICATE PLAIN", NULL));
+  dll_enq(wq, prc_msg("AUTHENTICATE PLAIN", NULL));
 }
 
 static void
-handler_authenticate(sll_t *wq, char *prefix, char *buf)
+handler_authenticate(dll_t *wq, char *prefix, char *buf)
 {
   char *cred;
 
@@ -87,27 +87,27 @@ handler_authenticate(sll_t *wq, char *prefix, char *buf)
   if (sasl_auth("buhmin", "WorldDomination", &cred) < 0)
     return;
 
-  sll_push(wq, prc_msg("AUTHENTICATE", cred, NULL));
+  dll_enq(wq, prc_msg("AUTHENTICATE", cred, NULL));
 
   free(cred);
 }
 
 static void
-handler_capend(sll_t *wq, char *prefix, char *buf)
+handler_capend(dll_t *wq, char *prefix, char *buf)
 {
-  sll_push(wq, prc_msg("CAP END", NULL));
+  dll_enq(wq, prc_msg("CAP END", NULL));
 }
 
 static void
-handler_ping(sll_t *wq, char *prefix, char *buf)
+handler_ping(dll_t *wq, char *prefix, char *buf)
 {
-  sll_push(wq, prc_msg("PONG buhmin", NULL));
+  dll_enq(wq, prc_msg("PONG buhmin", NULL));
 }
 
 static void
-handler_welcome(sll_t *wq, char *prefix, char *buf)
+handler_welcome(dll_t *wq, char *prefix, char *buf)
 {
-  sll_push(wq, prc_msg("JOIN ##archlinux-botabuse", NULL));
+  dll_enq(wq, prc_msg("JOIN ##archlinux-botabuse", NULL));
 }
 
 static void
@@ -144,7 +144,7 @@ plugin_switch(char *prefix, char *target, char *msg, char *args)
 }
 
 static void
-handler_privmsg(sll_t *wq, char *prefix, char *buf)
+handler_privmsg(dll_t *wq, char *prefix, char *buf)
 {
   char *tok, *target, *msg, *redirect;
 
@@ -174,7 +174,7 @@ handler_privmsg(sll_t *wq, char *prefix, char *buf)
     if (d1) {
       d2 = strchr(d1 + 1, ']');
       if (!d2) {
-        sll_push(wq, prc_msg("PRIVMSG", target, ":[syntax error]", NULL));
+        dll_enq(wq, prc_msg("PRIVMSG", target, ":[syntax error]", NULL));
         return;
       }
 
@@ -208,19 +208,16 @@ handler_privmsg(sll_t *wq, char *prefix, char *buf)
   {
     prc_plugin_msg_t *msg;
 
-    while (plugin_wq->head) {
-
-      sll_pop(plugin_wq, (void**)(&msg));
+    while ((msg = dll_pop(plugin_wq)) != NULL) {
 
       if (redirect && *(redirect + 1) == '>')
-        sll_push(wq, prc_msg3("%s %s :%s\r\n", msg->cmd, redirect + 2,
+        dll_enq(wq, prc_msg3("%s %s :%s\r\n", msg->cmd, redirect + 2,
                               msg->buf));
       else if (redirect)
-        sll_push(wq, prc_msg3("%s %s :%s: %s\r\n", msg->cmd, msg->target,
+        dll_enq(wq, prc_msg3("%s %s :%s: %s\r\n", msg->cmd, msg->target,
                              redirect + 1, msg->buf));
       else
-        sll_push(wq, prc_msg(msg->cmd, msg->target, ":", msg->buf, NULL));
-
+        dll_enq(wq, prc_msg(msg->cmd, msg->target, ":", msg->buf, NULL));
 
       free(msg->buf);
       free(msg);

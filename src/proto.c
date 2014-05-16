@@ -29,13 +29,13 @@ int
 proto_register(int epfd,
                char *node,
                char *service,
-               sll_t **owq)
+               dll_t **owq)
 {
   int sfd, err;
-  sll_t *wq;
+  dll_t *wq;
 
 
-  wq = calloc(1, sizeof(sll_t));
+  wq = calloc(1, sizeof(dll_t));
 
   sfd = proto_connect(node, service);
   if (sfd < 0) {
@@ -146,9 +146,7 @@ proto_write(struct epoll_event *ev)
   char *buf;
   event_handler_t *eh = (event_handler_t*)ev->data.ptr;
 
-  while (eh->wq->head) {
-
-    sll_pop(eh->wq, (void**)(&buf));
+  while ((buf = dll_pop(eh->wq)) != NULL) {
 
     term_printf(buf);
 

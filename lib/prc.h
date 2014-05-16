@@ -1,7 +1,7 @@
 #pragma once
 
 #include "uthash.h"
-#include "sll.h"
+#include "dll.h"
 
 #define MSG_SIZE 512
 
@@ -11,7 +11,7 @@ typedef int (prc_plugin_init_t)();
 /* prc_sym: array of all $functions the plugin wants to register */
 typedef struct prc_plugin_sym prc_plugin_sym_t;
 
-typedef void (prc_plugin_cmd_t)(sll_t *wq, char *prefix, char *target, char *args);
+typedef void (prc_plugin_cmd_t)(dll_t *wq, char *prefix, char *target, char *args);
 
 struct prc_plugin_sym {
   char *key;

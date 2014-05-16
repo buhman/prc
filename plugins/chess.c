@@ -21,22 +21,22 @@ static char *board[8] = {
   W_RO " " W_KN " " W_BI " " W_QU " " W_KI " " W_BI " " W_KN " " W_RO,
 };
 
-static sll_t *moves;
+static dll_t *moves;
 
 static int autoprint = 0;
 
 static void
-autoprint_cmd(sll_t *wq, char *prefix, char* target, char *args)
+autoprint_cmd(dll_t *wq, char *prefix, char* target, char *args)
 {
   autoprint = !autoprint;
   if (autoprint)
-    sll_push(wq, prc_msg2("PRIVMSG", target, "[enabled]", NULL));
+    dll_enq(wq, prc_msg2("PRIVMSG", target, "[enabled]", NULL));
   else
-    sll_push(wq, prc_msg2("PRIVMSG", target, "[disabled]", NULL));
+    dll_enq(wq, prc_msg2("PRIVMSG", target, "[disabled]", NULL));
 }
 
 static void
-print_cmd(sll_t *wq, char *prefix, char* target, char *args)
+print_cmd(dll_t *wq, char *prefix, char* target, char *args)
 {
   char **b, **bi, **bii, *move;
 
@@ -44,7 +44,7 @@ print_cmd(sll_t *wq, char *prefix, char* target, char *args)
   for (bii = b, bi = board; bii < b + 8; bi++, bii++)
     *bii = strdup(*bi);
 
-  sll_link_t *li = moves->head;
+  dll_link_t *li = moves->tail;
 
   while (li) {
     move = li->buf;
@@ -59,21 +59,21 @@ print_cmd(sll_t *wq, char *prefix, char* target, char *args)
       memcpy(x, ELPS, 3);
     }
 
-    li = li->next;
+    li = li->prev;
   }
 
   for (bi = b; bi < b + 8; bi++) {
-    sll_push(wq, prc_msg2("PRIVMSG", target, "%d %s", (int)(8 - (bi - b)), *bi));
+    dll_enq(wq, prc_msg2("PRIVMSG", target, "%d %s", (int)(8 - (bi - b)), *bi));
     free(*bi);
   }
 
   free(b);
 
-  sll_push(wq, prc_msg2("PRIVMSG", target, "  a b c d e f g h"));
+  dll_enq(wq, prc_msg2("PRIVMSG", target, "  a b c d e f g h"));
 }
 
 static void
-move_cmd(sll_t *wq, char *prefix, char* target, char *args)
+move_cmd(dll_t *wq, char *prefix, char* target, char *args)
 {
   //a1h8
   //97 49 104 56;
@@ -104,7 +104,7 @@ move_cmd(sll_t *wq, char *prefix, char* target, char *args)
     }
 
     {
-      sll_push(moves, pos);
+      dll_push(moves, pos);
 
       if (autoprint)
         print_cmd(wq, prefix, target, args);
@@ -114,33 +114,14 @@ move_cmd(sll_t *wq, char *prefix, char* target, char *args)
   }
 
  invalid:
-  sll_push(wq, prc_msg2("PRIVMSG", target, "[invalid]"));
+  dll_enq(wq, prc_msg2("PRIVMSG", target, "[invalid]"));
 }
 
 static void
-undo_cmd(sll_t *wq, char *prefix, char* target, char *args)
+undo_cmd(dll_t *wq, char *prefix, char* target, char *args)
 {
-  sll_link_t *li, *li_prev = NULL;
 
-  if (!moves->head)
-    return;
-
-  li = moves->head;
-
-  while (li->next) {
-    li_prev = li;
-    li = li->next;
-  }
-
-  if(!li_prev) {
-    moves->head = NULL;
-    return;
-  }
-
-  li_prev->next = NULL;
-  moves->tail = li_prev;
-  free(li->buf);
-  free(li);
+  dll_pop(moves);
 
   if (autoprint)
     print_cmd(wq, prefix, target, args);
@@ -149,7 +130,7 @@ undo_cmd(sll_t *wq, char *prefix, char* target, char *args)
 int
 prc_ctor()
 {
-  moves = calloc(1, sizeof(sll_t));
+  moves = calloc(1, sizeof(dll_t));
 
   return 0;
 }

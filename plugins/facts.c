@@ -17,7 +17,7 @@ static fact_ht_t *facts_head;
 static char *db_path;
 
 static void
-facts_find_handler(sll_t *wq, char *prefix, char *target, char *tok)
+facts_find_handler(dll_t *wq, char *prefix, char *target, char *tok)
 {
   char *fact;
 
@@ -28,7 +28,7 @@ facts_find_handler(sll_t *wq, char *prefix, char *target, char *tok)
     fact = facts_get(tok);
 
     if (fact) {
-      sll_push(wq, prc_msg2("PRIVMSG", target, "%s", fact));
+      dll_enq(wq, prc_msg2("PRIVMSG", target, "%s", fact));
       free(fact);
     }
     else
@@ -37,7 +37,7 @@ facts_find_handler(sll_t *wq, char *prefix, char *target, char *tok)
 }
 
 static void
-facts_add_handler(sll_t *wq, char *prefix, char *target, char *tok)
+facts_add_handler(dll_t *wq, char *prefix, char *target, char *tok)
 {
   char *key, *fact, *status, *sp;
 
@@ -57,7 +57,7 @@ facts_add_handler(sll_t *wq, char *prefix, char *target, char *tok)
   else
     status = "[failure]";
 
-  sll_push(wq, prc_msg2("PRIVMSG", target, status));
+  dll_enq(wq, prc_msg2("PRIVMSG", target, status));
 }
 
 static int

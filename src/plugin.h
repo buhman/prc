@@ -19,8 +19,8 @@ struct plugin_ht_t {
 };
 
 void
-plugin_lookup(sll_t *wq, char *prefix, char *target,
+plugin_lookup(dll_t *wq, char *prefix, char *target,
               char *cmd, char *args);
 
 void
-plugin_cmd(sll_t *wq, char *prefix, char *target, char *buf);
+plugin_cmd(dll_t *wq, char *prefix, char *target, char *buf);

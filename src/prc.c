@@ -46,15 +46,15 @@ main(int argc,
   }
 
   {
-    sll_t *wq;
+    dll_t *wq;
 
     term_register(epfd);
 
     proto_register(epfd, "dickson.freenode.net", "6667", &wq);
 
-    sll_push(wq, prc_msg("CAP REQ :sasl", NULL));
-    sll_push(wq, prc_msg("NICK buhmin", NULL));
-    sll_push(wq, prc_msg("USER buhmin foo bar :buhman's minion", NULL));
+    dll_enq(wq, prc_msg("CAP REQ :sasl", NULL));
+    dll_enq(wq, prc_msg("NICK buhmin", NULL));
+    dll_enq(wq, prc_msg("USER buhmin foo bar :buhman's minion", NULL));
   }
 
   while (terminate > 0) {

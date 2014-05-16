@@ -14,9 +14,9 @@
 #define BACKSPACE "\033[D \033[D"
 
 #include <sys/epoll.h>
-#include "sll.h"
+#include "dll.h"
 
-extern sll_t *term_wq;
+extern dll_t *term_wq;
 
 int
 term_stdout(int epfd);

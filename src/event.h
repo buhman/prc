@@ -2,7 +2,7 @@
 
 #include <sys/epoll.h>
 
-#include "sll.h"
+#include "dll.h"
 
 typedef struct event_handler event_handler_t;
 typedef int (eh_fptr_t)(struct epoll_event*);
@@ -12,7 +12,7 @@ struct event_handler {
   int fd;
   eh_fptr_t *rf;
   eh_fptr_t *wf;
-  sll_t *wq;
+  dll_t *wq;
 };
 
 int
@@ -24,7 +24,7 @@ event_add(int epfd,
           uint32_t events,
           eh_fptr_t *rf,
           eh_fptr_t *wf,
-          sll_t *wq,
+          dll_t *wq,
           struct epoll_event *ev);
 
 int
