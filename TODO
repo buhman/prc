@@ -21,10 +21,11 @@ to, channels to join, etc.. are hard-coded in prc sources; these
 rather common things should be moved to a separate runtime-modifiable
 configuration file.
 
-### World Domination
+### Plugin sandboxing/IPC
 
-Sandbox
--------
+A plugin that {segfaults,does invalid/evil things with memory,etc}
+also causes prc itself to self-destruct. Instead plugins should run in
+their own process and do IPC with prc.
 
 ### Big reload
 
@@ -33,6 +34,11 @@ to a new instance of prc--most of the startup process involves
 stateful server-side cruft, so this would effectively reduce full
 restart times to ~0 (compared to the current ~5+ second startup
 sequence).
+
+### World Domination
+
+Sandbox
+-------
 
 ### Global hashtable of hashtables
 
@@ -50,17 +56,12 @@ of it just to find the real problem.
 The buhman-hashtable doesn't even need to be quite as fast, etc.. as
 uthash, it just needs to be buhman.
 
-### Plugin sandboxing/IPC
-
-A plugin that {segfaults,does invalid/evil things with memory,etc}
-also causes prc itself to self-destruct. Instead plugins should run in
-their own process and do IPC with prc.
+In particular, I would "solve" collision by requiring the verbatim
+string be stored in a hashtable datastructure, then compare that to
+the original value. dll.c would work well for this purpose.
 
 Plugins
 =======
-
-TODO
-----
 
 ### libquotes
 
@@ -68,14 +69,15 @@ Yet-another key-value database, this time of things people said. This
 requires `Add 'buffer' (and logging) support`, in addition to
 significant changes to the plugin architecture.
 
-Sandbox
--------
-
 ### libfacts
 
 libfacts currently registers `fact_find` and `fact_add`; it would make
 negligibly more sense if it registered only `fact`, where said
 meta-handler would pass off `find`, `add`, etc...
+
+It may also be desired to allow multiple values for the same key--a
+hashtable implementation specifically designed for this would also
+make this easier.
 
 ### libchess
 
@@ -97,7 +99,25 @@ pieces as individual pieces; this allows:
 
 In its own special thread, this would wait for a related git
 post-commit hook to inform it of new commits; it would then retrieve
-said commit messages, and regurgitate to the channel.
+said commit message, and regurgitate to the channel.
+
+This would involve an epoll'ed accept()--netcat or similar would be
+used in the git post-commit hook, and the initial trivial
+implementation would simply involve closing the connection
+immediately. libgit2 would then be used to read the HEAD commit.
+
+Because libgitcd would be writing to the plugin queue independently of
+the mainloop, the mainloop also needs to be informed of this.
+
+The plugin architecture I think could be updated to provide the
+eventfd to the constructor of each plugin. bit-shifting is already
+used to encode up to 64 values--a new value for "do the
+plugin-write-queue thing" would simply need to be created; perhaps an
+enum for these possible events (and their names) should also be
+created.
+
+dll also would need to be updated to become threadsafe (should be
+trivial).
 
 ### libsteal
 
