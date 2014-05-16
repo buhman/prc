@@ -15,8 +15,8 @@ struct sll_link {
 
 void
 sll_push(sll_t *ol,
-         char *buf);
+         void *buf);
 
 void
 sll_pop(sll_t *ol,
-        char **obuf);
+        void **obuf);

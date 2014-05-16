@@ -3,13 +3,18 @@
 #include "prc.h"
 #include "uthash.h"
 
-typedef int (reg_fp_t)(prc_plugin_ht_t**);
-
 typedef struct plugin_handle_ht plugin_handle_ht_t;
 
 struct plugin_handle_ht {
   void *handle;
-  char *name;
+  prc_plugin_sym_t *sym;
+  UT_hash_handle hh;
+};
+
+typedef struct plugin_ht_t plugin_ht_t;
+
+struct plugin_ht_t {
+  prc_plugin_cmd_t *func;
   UT_hash_handle hh;
 };
 

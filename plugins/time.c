@@ -1,28 +1,16 @@
-#include <stdio.h>
 #include <time.h>
 
 #include "prc.h"
 
-void
+static prc_plugin_cmd_t time_cmd;
+
+prc_plugin_sym_t prc_sym[] = {
+  {"time", time_cmd},
+  {NULL},
+};
+
+static void
 time_cmd(sll_t *wq, char *prefix, char* target, char *args)
 {
-  char buf[20];
-  time_t t;
-
-  t = time(NULL);
-  sprintf(buf, "%ld", (long)t);
-
-  sll_push(wq, prc_msg("PRIVMSG", target, buf, NULL));
-}
-
-void
-prc_reg(prc_plugin_ht_t **plugin_head)
-{
-  prc_register(plugin_head, "time", time_cmd);
-}
-
-void
-prc_dereg(prc_plugin_ht_t **plugin_head)
-{
-  prc_deregister(plugin_head, "time");
+  sll_push(wq, prc_msg2("PRIVMSG", target, "%ld", (long)time(NULL)));
 }

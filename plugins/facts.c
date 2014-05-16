@@ -8,25 +8,28 @@
 
 #include "facts.h"
 
+prc_plugin_sym_t prc_sym[] = {
+  {"fact_find", facts_find_handler},
+  {"fact_add", facts_add_handler},
+};
+
 static fact_ht_t *facts_head;
 static char *db_path;
 
 static void
 facts_find_handler(sll_t *wq, char *prefix, char *target, char *tok)
 {
-  char *fact, *pmsg;
+  char *fact;
+
+  if (!tok)
+    return;
 
   {
     fact = facts_get(tok);
 
     if (fact) {
-      pmsg = malloc(strlen(fact) + 2);
-      strcpy(pmsg + 1, fact);
-      *pmsg = ':';
-
-      sll_push(wq, prc_msg("PRIVMSG", target, pmsg, NULL));
+      sll_push(wq, prc_msg2("PRIVMSG", target, "%s", fact));
       free(fact);
-      free(pmsg);
     }
     else
       fprintf(stderr, "FACT [%s] not found\n", tok);
@@ -38,6 +41,9 @@ facts_add_handler(sll_t *wq, char *prefix, char *target, char *tok)
 {
   char *key, *fact, *status, *sp;
 
+  if (!tok)
+    return;
+
   key = strtok_r(tok, "`", &sp);
   if (key == NULL)
     fprintf(stderr, "FACTADD: no key");
@@ -47,14 +53,14 @@ facts_add_handler(sll_t *wq, char *prefix, char *target, char *tok)
     fprintf(stderr, "FACTADD: no fact");
 
   if (fact != NULL && key != NULL)
-    status = facts_add(key, fact) >= 0 ? ":[success]" : ":[failure]";
+    status = facts_add(key, fact) >= 0 ? "[success]" : "[failure]";
   else
-    status = ":[failure]";
+    status = "[failure]";
 
-  sll_push(wq, prc_msg("PRIVMSG", target, status, NULL));
+  sll_push(wq, prc_msg2("PRIVMSG", target, status));
 }
 
-int
+static int
 facts_add(char *key,
           char *fact)
 {
@@ -102,7 +108,7 @@ facts_add(char *key,
   return 0;
 }
 
-char *
+static char *
 facts_get(char *key)
 {
   fact_ht_t *item;
@@ -116,7 +122,7 @@ facts_get(char *key)
   free(item);
 }
 
-int
+static int
 facts_init_ht(char *path)
 {
   int dbfd, err;
@@ -190,7 +196,7 @@ facts_init_ht(char *path)
   return 0;
 }
 
-void
+static void
 facts_destroy_ht()
 {
   static fact_ht_t *item, *tmp;
@@ -202,26 +208,24 @@ facts_destroy_ht()
   }
 }
 
-void
-prc_reg(prc_plugin_ht_t **plugin_head)
+int
+prc_ctor()
 {
   int err;
 
   err = facts_init_ht("db");
   if (err < 0) {
     fprintf(stderr, "facts_init_ht()\n");
-    return;
+    return -1;
   }
 
-  prc_register(plugin_head, "fact_find", facts_find_handler);
-  prc_register(plugin_head, "fact_add", facts_add_handler);
+  return 0;
 }
 
-void
-prc_dereg(prc_plugin_ht_t **plugin_head)
+int
+prc_dtor()
 {
   facts_destroy_ht();
 
-  prc_deregister(plugin_head, "fact_find");
-  prc_deregister(plugin_head, "fact_add");
+  return 0;
 }

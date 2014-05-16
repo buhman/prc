@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 
 #include "prc.h"
 #include "sasl.h"
@@ -24,9 +25,11 @@ static handler_sym_t _handler_sym[] = {
   {"001", handler_welcome},
 };
 
-void
-handler_init() {
+static sll_t *plugin_wq;
 
+void
+handler_init()
+{
   handler_sym_t *hsti;
   handler_ht_t *item;
 
@@ -42,15 +45,22 @@ handler_init() {
     //fprintf(stderr, "HHTH [%s] -> [%p]\n", hsti->name, *(void**)&hsti->func);
     HASH_ADD_KEYPTR(hh, handler_head, hsti->name, strlen(hsti->name), item);
   }
+
+  plugin_wq = calloc(1, sizeof(plugin_wq));
+}
+
+void
+handler_free()
+{
+  free(plugin_wq);
 }
 
 void
 handler_lookup(char *command,
                sll_t *wq,
                char *prefix,
-               char *buf) {
-
-
+               char *buf)
+{
   handler_ht_t *item;
 
   HASH_FIND_STR(handler_head, command, item);
@@ -60,21 +70,17 @@ handler_lookup(char *command,
 }
 
 static void
-handler_cap(sll_t *wq, char *prefix, char *buf) {
-
-  //fprintf(stderr, "handler_cap(): %s\n", buf);
-
+handler_cap(sll_t *wq, char *prefix, char *buf)
+{
   /* lazy */
 
   sll_push(wq, prc_msg("AUTHENTICATE PLAIN", NULL));
 }
 
 static void
-handler_authenticate(sll_t *wq, char *prefix, char *buf) {
-
+handler_authenticate(sll_t *wq, char *prefix, char *buf)
+{
   char *cred;
-
-  //fprintf(stderr, "auth()\n");
 
   /* lazy */
 
@@ -87,27 +93,60 @@ handler_authenticate(sll_t *wq, char *prefix, char *buf) {
 }
 
 static void
-handler_capend(sll_t *wq, char *prefix, char *buf) {
-
+handler_capend(sll_t *wq, char *prefix, char *buf)
+{
   sll_push(wq, prc_msg("CAP END", NULL));
 }
 
 static void
-handler_ping(sll_t *wq, char *prefix, char *buf) {
-
+handler_ping(sll_t *wq, char *prefix, char *buf)
+{
   sll_push(wq, prc_msg("PONG buhmin", NULL));
 }
 
 static void
-handler_welcome(sll_t *wq, char *prefix, char *buf) {
-
+handler_welcome(sll_t *wq, char *prefix, char *buf)
+{
   sll_push(wq, prc_msg("JOIN ##archlinux-botabuse", NULL));
 }
 
 static void
-handler_privmsg(sll_t *wq, char *prefix, char *buf) {
+plugin_switch(char *prefix, char *target, char *msg, char *args)
+{
+  char *tok;
 
-  char *tok, *target, *msg;
+  // plugin prefix
+  switch (*msg) {
+  case '\001':
+    plugin_lookup(plugin_wq, prefix, target, "ctcp", args);
+    break;
+  case '`':
+    plugin_lookup(plugin_wq, prefix, target, "fact_find", args);
+    break;
+  case '%':
+    plugin_lookup(plugin_wq, prefix, target, "fact_add", args);
+    break;
+  case '$':
+    {
+      tok = strchr(msg + 1, ' ');
+      if (tok) {
+        *tok = '\0';
+        plugin_lookup(plugin_wq, prefix, target, args, tok + 1);
+      }
+      else
+        plugin_lookup(plugin_wq, prefix, target, args, NULL);
+    }
+    break;
+  case '#':
+    plugin_cmd(plugin_wq, prefix, target, args);
+    break;
+  }
+}
+
+static void
+handler_privmsg(sll_t *wq, char *prefix, char *buf)
+{
+  char *tok, *target, *msg, *redirect;
 
   tok = strchr(buf, ' ');
   if (!tok) {
@@ -125,30 +164,65 @@ handler_privmsg(sll_t *wq, char *prefix, char *buf) {
     return;
   }
 
-  // plugin prefix
-  switch (*msg) {
-  case '\001':
-    plugin_lookup(wq, prefix, target, "ctcp", msg + 1);
-    break;
-  case '`':
-    plugin_lookup(wq, prefix, target, "fact_find", msg + 1);
-    break;
-  case '%':
-    plugin_lookup(wq, prefix, target, "fact_add", msg + 1);
-    break;
-  case '$':
-    {
-      tok = strchr(msg + 1, ' ');
-      if (tok) {
-        *tok = '\0';
-        plugin_lookup(wq, prefix, target, msg + 1, tok + 1);
+  redirect = strchr(msg, '>');
+  if (redirect)
+    *redirect = '\0';
+
+  {
+    char *d1, *d2, *tok1, *dup;
+    d1 = strchr(msg + 1, '[');
+    if (d1) {
+      d2 = strchr(d1 + 1, ']');
+      if (!d2) {
+        sll_push(wq, prc_msg("PRIVMSG", target, ":[syntax error]", NULL));
+        return;
       }
-      else
-        plugin_lookup(wq, prefix, target, msg + 1, NULL);
+
+      *d2 = '\0';
+
+      tok = d1 + 1;
+
+      while (tok1 != d2) {
+
+        tok1 = strchr(tok, ',');
+        if (!tok1)
+          tok1 = d2;
+
+        memmove(d1, tok, tok1 - tok);
+        *(d1 + (tok1 - tok)) = '\0';
+
+        dup = strdup(msg);
+        plugin_switch(prefix, target, dup, dup + 1);
+        free(dup);
+
+        tok = tok1 + 1;
+      }
     }
-    break;
-  case '#':
-    plugin_cmd(wq, prefix, target, msg + 1);
-    break;
-  }
+    else
+      plugin_switch(prefix, target, msg, msg + 1);
+
+    tok = d2 + 1;
+  } /* ... */
+
+  {
+    prc_plugin_msg_t *msg;
+
+    while (plugin_wq->head) {
+
+      sll_pop(plugin_wq, (void**)(&msg));
+
+      if (redirect && *(redirect + 1) == '>')
+        sll_push(wq, prc_msg3("%s %s :%s\r\n", msg->cmd, redirect + 2,
+                              msg->buf));
+      else if (redirect)
+        sll_push(wq, prc_msg3("%s %s :%s: %s\r\n", msg->cmd, msg->target,
+                             redirect + 1, msg->buf));
+      else
+        sll_push(wq, prc_msg(msg->cmd, msg->target, ":", msg->buf, NULL));
+
+
+      free(msg->buf);
+      free(msg);
+    }
+  } /* ... */
 }

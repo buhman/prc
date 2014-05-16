@@ -4,32 +4,6 @@
 
 #include "prc.h"
 
-void
-prc_register(prc_plugin_ht_t **head, char *key, prc_plugin_cmd_t *func)
-{
-  prc_plugin_ht_t *item;
-  item = malloc(sizeof(prc_plugin_ht_t));
-  item->func = func;
-
-  HASH_ADD_KEYPTR(hh, *head, key, strlen(key), item);
-}
-
-void
-prc_deregister(prc_plugin_ht_t **head, char *key)
-{
-  prc_plugin_ht_t *item;
-
-  HASH_FIND_STR(*head, key, item);
-  if (!item) {
-    fprintf(stderr, "attempt to deregister unregistered [%s]\n", key);
-    return;
-  }
-
-  HASH_DELETE(hh, *head, item);
-
-  free(item);
-}
-
 char*
 prc_prefix_parse(char *prefix, enum prefix_cp comp)
 {
@@ -65,10 +39,10 @@ prc_msg(char *cmd, ...)
   while (arg != NULL) {
 
     /* DRAGONS */
-    if (*(arg + 1) == '\0')
-      ibuf += sprintf(ibuf, arg);
+    if ((*arg == ':' || *arg == '\001') && *(arg + 1) == '\0')
+      ibuf += snprintf(ibuf, MSG_SIZE, arg);
     else
-      ibuf += sprintf(ibuf, "%s ", arg);
+      ibuf += snprintf(ibuf, MSG_SIZE, "%s ", arg);
 
     arg = va_arg(ap, char*);
   }
@@ -76,6 +50,41 @@ prc_msg(char *cmd, ...)
   va_end(ap);
 
   sprintf(ibuf - 1, "\r\n");
+
+  return buf;
+}
+
+prc_plugin_msg_t*
+prc_msg2(char *cmd, char *target, char *format, ...)
+{
+  char *buf = malloc(MSG_SIZE);
+  prc_plugin_msg_t *msg = malloc(sizeof(prc_plugin_msg_t));
+
+  {
+    va_list ap;
+    va_start(ap, format);
+    vsnprintf(buf, MSG_SIZE, format, ap);
+    va_end(ap);
+  }
+
+  msg->cmd = cmd;
+  msg->buf = buf;
+  msg->target = target; // copy will happen in prc_msg
+
+  return msg;
+}
+
+char*
+prc_msg3(char *format, ...)
+{
+  char *buf = malloc(MSG_SIZE);
+
+  {
+    va_list ap;
+    va_start(ap, format);
+    vsnprintf(buf, MSG_SIZE, format, ap);
+    va_end(ap);
+  }
 
   return buf;
 }
