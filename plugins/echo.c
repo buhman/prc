@@ -1,5 +1,3 @@
-#include <ctype.h>
-
 #include "prc.h"
 
 static prc_plugin_cmd_t echo_cmd;
