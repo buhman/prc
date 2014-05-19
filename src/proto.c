@@ -34,17 +34,17 @@ proto_register(int epfd,
   int sfd, err;
   dll_t *wq;
 
-
-  wq = calloc(1, sizeof(dll_t));
-
   sfd = proto_connect(node, service);
   if (sfd < 0) {
     perror("proto_connect()");
     return sfd;
   }
 
+  wq = calloc(1, sizeof(dll_t));
+
   err = event_add(epfd, sfd, EPOLLIN, proto_read, proto_write, wq, &proto_cev);
   if (err < 0) {
+    free(wq);
     perror("event_add()");
     return err;
   }
@@ -126,8 +126,10 @@ proto_read(struct epoll_event *ev)
       if (errno == EAGAIN || errno == EWOULDBLOCK)
         break;
       perror("recv()");
+      free(rbuf);
       return -1;
     } else if (len == 0) {
+      free(rbuf);
       return 0;
     }
 
