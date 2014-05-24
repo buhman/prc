@@ -8,6 +8,7 @@ prc_plugin_sym_t prc_sym[] = {
   {"print", print_cmd},
   {"move", move_cmd},
   {"undo", undo_cmd},
+  {"snap", snap_cmd}
 };
 
 static char *board[8] = {
@@ -96,7 +97,7 @@ move_cmd(dll_t *wq, char *prefix, char* target, char *args)
     for (int i = 0; i < 4; i++) {
       c = *(args + i);
       if (i % 2 && c > 48 && c < 57) //if Yx
-        pos[i] = 7 - (c - 49);
+        pos[i] = 56 - c;
       else if (!(i % 2) && c > 96 && c < 105) //if Xx
         pos[i] = c - 97;
       else
@@ -125,6 +126,39 @@ undo_cmd(dll_t *wq, char *prefix, char* target, char *args)
 
   if (autoprint)
     print_cmd(wq, prefix, target, args);
+}
+
+static void
+snap_cmd(dll_t *wq, char *prefix, char* target, char *args)
+{
+  char *buf, *bufi, *c;
+  dll_link_t *li = moves->tail;
+
+  buf = malloc(MSG_SIZE);
+  bufi = buf;
+
+  while (li) {
+    for (c = (char*)li->buf; c < (char*)li->buf + 4; c++) {
+
+      if ((c - (char*)li->buf) % 2) //if Yx
+        *bufi = 56 - *c;
+      else //if Xx
+        *bufi = *c + 97;
+
+      bufi++;
+    }
+
+    *bufi = ',';
+    bufi++;
+
+    li = li->prev;
+  }
+
+  *(bufi - 1) = '\0';
+
+  dll_enq(wq, prc_msg2("PRIVMSG", target, buf));
+
+  free(buf);
 }
 
 int

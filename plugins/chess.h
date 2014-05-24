@@ -20,6 +20,7 @@ static prc_plugin_cmd_t autoprint_cmd;
 static prc_plugin_cmd_t print_cmd;
 static prc_plugin_cmd_t move_cmd;
 static prc_plugin_cmd_t undo_cmd;
+static prc_plugin_cmd_t snap_cmd;
 
 enum position {
   X1 = 0,

@@ -10,7 +10,9 @@ lib_LTLIBRARIES = \
 	libtime.la \
 	libctcp.la \
 	libfacts.la \
-	libchess.la
+	libchess.la \
+	librot13.la \
+	libecho.la
 
 libtime_la_SOURCES = \
 	time.c
@@ -23,3 +25,9 @@ libctcp_la_SOURCES = \
 
 libchess_la_SOURCES = \
 	chess.c chess.h
+
+librot13_la_SOURCES = \
+	rot13.c
+
+libecho_la_SOURCES = \
+	echo.c
