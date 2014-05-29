@@ -214,12 +214,13 @@ term_printf(char *format, ...)
   {
     va_list ap;
     va_start(ap, format);
-    vsnprintf(buf, MSG_SIZE - 1, format, ap);
+    vsnprintf(buf, MSG_SIZE - (2 + strlen("" ERASE_LINE SCROLL_DOWN FORCE_CURSORd
+                                          CURSOR_UP FORCE_CURSORd)), format, ap);
     va_end(ap);
   } /* ... */
 
   *line_bufi = '\0';
-  snprintf(scratch, MSG_SIZE,
+  snprintf(scratch, MSG_SIZE - 1,
            "" ERASE_LINE SCROLL_DOWN FORCE_CURSORd CURSOR_UP "%s" FORCE_CURSORd "%s",
            ws.ws_row, buf, ws.ws_row, line_buf);
   dll_enq(term_wq, strdup(scratch));

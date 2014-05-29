@@ -49,7 +49,6 @@ dice_cmd(dll_t *wq, char *prefix, char* target, char *args)
   for (i = 0, bufi = buf; i < num; i++, bufi += flen) {
 
     if ((bufi - buf) + flen > MSG_SIZE - 1) {
-      fprintf(stderr, "moar\n");
       *bufi = '\0';
       bufi = buf;
       dll_enq(wq, prc_msg2("PRIVMSG", target, "%s", buf));

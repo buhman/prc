@@ -61,8 +61,6 @@ prc_msg2(char *cmd, char *target, char *format, ...)
   char *buf = malloc(MSG_SIZE);
   prc_plugin_msg_t *msg = malloc(sizeof(prc_plugin_msg_t));
 
-  fprintf(stderr, "malloc'ed: %p\n", buf);
-
   {
     va_list ap;
     va_start(ap, format);

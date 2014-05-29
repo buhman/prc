@@ -219,8 +219,6 @@ handler_privmsg(dll_t *wq, char *prefix, char *buf)
       else
         dll_enq(wq, prc_msg(msg->cmd, msg->target, ":", msg->buf, NULL));
 
-      fprintf(stderr, "free'ing: %p, '%s'\n", msg->buf, msg->buf);
-
       free(msg->buf);
       free(msg);
     }
