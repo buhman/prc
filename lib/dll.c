@@ -47,7 +47,7 @@ dll_enq(dll_t *ol,
 {
   dll_link_t *li;
 
-  li = malloc(sizeof(dll_link_t));
+  li = calloc(1, sizeof(dll_link_t));
   li->buf = buf;
 
 #ifdef DEBUG_ASSERT
@@ -123,7 +123,7 @@ dll_push(dll_t *ol,
 {
   dll_link_t *li;
 
-  li = malloc(sizeof(dll_link_t));
+  li = calloc(1, sizeof(dll_link_t));
   li->buf = buf;
 
 #ifdef DEBUG_ASSERT

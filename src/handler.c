@@ -46,7 +46,7 @@ handler_init()
     HASH_ADD_KEYPTR(hh, handler_head, hsti->name, strlen(hsti->name), item);
   }
 
-  plugin_wq = calloc(1, sizeof(plugin_wq));
+  plugin_wq = calloc(1, sizeof(dll_t));
 }
 
 void
@@ -218,6 +218,8 @@ handler_privmsg(dll_t *wq, char *prefix, char *buf)
                              redirect + 1, msg->buf));
       else
         dll_enq(wq, prc_msg(msg->cmd, msg->target, ":", msg->buf, NULL));
+
+      fprintf(stderr, "free'ing: %p, '%s'\n", msg->buf, msg->buf);
 
       free(msg->buf);
       free(msg);

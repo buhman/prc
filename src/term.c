@@ -214,7 +214,7 @@ term_printf(char *format, ...)
   {
     va_list ap;
     va_start(ap, format);
-    vsnprintf(buf, MSG_SIZE, format, ap);
+    vsnprintf(buf, MSG_SIZE - 1, format, ap);
     va_end(ap);
   } /* ... */
 

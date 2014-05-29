@@ -31,25 +31,26 @@ prc_msg(char *cmd, ...)
   va_list ap;
   char *arg = cmd;
 
-  char *buf = malloc(MSG_SIZE);
-  char *ibuf = buf;
+  char *buf = calloc(1, MSG_SIZE);
+
+  int len;
 
   va_start(ap, cmd);
 
   while (arg != NULL) {
 
-    /* DRAGONS */
+    len = strlen(buf);
     if ((*arg == ':' || *arg == '\001') && *(arg + 1) == '\0')
-      ibuf += snprintf(ibuf, MSG_SIZE, arg);
+      snprintf(buf + len, MSG_SIZE - (3 + len), arg);
     else
-      ibuf += snprintf(ibuf, MSG_SIZE, "%s ", arg);
+      snprintf(buf + len, MSG_SIZE - (3 + len), "%s ", arg);
 
     arg = va_arg(ap, char*);
   }
 
   va_end(ap);
 
-  sprintf(ibuf - 1, "\r\n");
+  sprintf(buf + strlen(buf) - 1, "\r\n");
 
   return buf;
 }
@@ -60,10 +61,12 @@ prc_msg2(char *cmd, char *target, char *format, ...)
   char *buf = malloc(MSG_SIZE);
   prc_plugin_msg_t *msg = malloc(sizeof(prc_plugin_msg_t));
 
+  fprintf(stderr, "malloc'ed: %p\n", buf);
+
   {
     va_list ap;
     va_start(ap, format);
-    vsnprintf(buf, MSG_SIZE, format, ap);
+    vsnprintf(buf, MSG_SIZE - 1, format, ap);
     va_end(ap);
   }
 
@@ -82,7 +85,7 @@ prc_msg3(char *format, ...)
   {
     va_list ap;
     va_start(ap, format);
-    vsnprintf(buf, MSG_SIZE, format, ap);
+    vsnprintf(buf, MSG_SIZE - 1, format, ap);
     va_end(ap);
   }
 
