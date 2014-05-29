@@ -12,7 +12,9 @@ lib_LTLIBRARIES = \
 	libfacts.la \
 	libchess.la \
 	librot13.la \
-	libecho.la
+	libecho.la \
+	libmagic.la \
+	libdice.la
 
 libtime_la_SOURCES = \
 	time.c
@@ -31,3 +33,9 @@ librot13_la_SOURCES = \
 
 libecho_la_SOURCES = \
 	echo.c
+
+libmagic_la_SOURCES = \
+	magic.c
+
+libdice_la_SOURCES = \
+	dice.c
