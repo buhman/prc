@@ -33,7 +33,7 @@ prc_msg(char *cmd, ...)
 
   char *buf = calloc(1, MSG_SIZE);
 
-  int len;
+  int len, offset;
 
   va_start(ap, cmd);
 
@@ -50,7 +50,12 @@ prc_msg(char *cmd, ...)
 
   va_end(ap);
 
-  sprintf(buf + strlen(buf) - 1, "\r\n");
+  len = strlen(buf);
+  offset = 1;
+  while ((unsigned char)*(buf + len - (offset + 1)) > 127)
+    offset++;
+
+  sprintf(buf + len - offset, "\r\n");
 
   return buf;
 }

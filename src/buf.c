@@ -7,9 +7,9 @@ printbuf(char *buf, int len)
 
   while (bufi < buf + len) {
     if (*bufi > 32 && *bufi < 127)
-      fprintf(stderr, "%c ", *bufi);
+      fprintf(stderr, "%c ", (unsigned char)*bufi);
     else
-      fprintf(stderr, "%x ", *bufi);
+      fprintf(stderr, "%02x ", (unsigned char)*bufi);
 
     bufi++;
   }

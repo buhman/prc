@@ -30,31 +30,33 @@ dice_cmd(dll_t *wq, char *prefix, char* target, char *args)
   char *buf, *bufi, *tok;
 
   if (!args)
-    return;
+    num = 1;
+  else {
+    tok = strchr(args, ' ');
+    if (tok)
+      *tok = '\0';
 
-  tok = strchr(args, ' ');
-  if (tok)
-    *tok = '\0';
-
-  num = strtoll(args, &tok, 10);
-  if (*tok != '\0') {
-    dll_enq(wq, prc_msg2("PRIVMSG", target, "[invalid]"));
-    return;
+    num = strtoll(args, &tok, 10);
+    if (*tok != '\0') {
+      dll_enq(wq, prc_msg2("PRIVMSG", target, "[invalid]"));
+      return;
+    }
   }
 
   flen = strlen(faces[0]);
 
   buf = malloc(MSG_SIZE);
 
-  for (i = 0, bufi = buf; i < num; i++, bufi += flen) {
+  for (i = 0, bufi = buf; i < num; i++, bufi += flen + 1) {
 
-    if ((bufi - buf) + flen > MSG_SIZE - 1) {
+    if ((bufi - buf) + flen + 1 > MSG_SIZE - 1) {
       *bufi = '\0';
       bufi = buf;
       dll_enq(wq, prc_msg2("PRIVMSG", target, "%s", buf));
     }
 
     strcpy(bufi, faces[random() % 6]);
+    *(bufi + flen) = ' ';
   }
 
   *bufi = '\0';
