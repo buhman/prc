@@ -1,5 +1,4 @@
 #!/bin/bash
 
-v=$(git describe --abbrev=5 --match='v[0-9]*' HEAD 2> /dev/null)
-
-sed 's/^v//' <<< "$v" | tr -d '\012'
+git describe --abbrev=5 --match='v[0-9]*' HEAD 2> /dev/null | \
+    sed 's/^v//' | tr -d '\012'
