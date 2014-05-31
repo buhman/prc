@@ -54,7 +54,7 @@ main(int argc,
 
     dll_enq(wq, prc_msg("CAP REQ :sasl", NULL));
     dll_enq(wq, prc_msg("NICK buhmin", NULL));
-    dll_enq(wq, prc_msg("USER buhmin foo bar :buhman's minion", NULL));
+    dll_enq(wq, prc_msg("USER prc foo bar :buhman's minion", NULL));
   }
 
   while (terminate > 0) {
