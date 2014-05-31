@@ -5,8 +5,8 @@
 
 int
 proto_register(int epfd,
-               char *node,
-               char *service,
+               const char *node,
+               const char *service,
                dll_t **owq);
 
 int

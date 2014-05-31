@@ -1,6 +1,4 @@
-include ../common.am
-
-AM_CFLAGS += \
+AM_CFLAGS = \
 	-I$(top_srcdir)/lib
 
 AM_LIBADD = \

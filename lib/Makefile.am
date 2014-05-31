@@ -1,5 +1,3 @@
-include ../common.am
-
 lib_LTLIBRARIES = libprc.la
 
 libprc_la_SOURCES = \

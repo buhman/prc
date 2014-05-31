@@ -5,6 +5,9 @@
 static prc_plugin_cmd_t facts_find_handler;
 static prc_plugin_cmd_t facts_add_handler;
 
+prc_tor_t prc_ctor;
+prc_tor_t prc_dtor;
+
 typedef struct fact_ht fact_ht_t;
 
 struct fact_ht {
@@ -13,11 +16,10 @@ struct fact_ht {
 };
 
 static int
-facts_add(char *key,
-          char *fact);
+facts_add(const char *key, const char *fact);
 
 static char *
-facts_get(char *key);
+facts_get(const char *key);
 
 static int
-facts_init_ht(char *path);
+facts_init_ht(const char *path);

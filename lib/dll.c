@@ -9,7 +9,7 @@
 /* fail fast, fail hard */
 #ifdef DEBUG_ASSERT
 static void
-list_assert(const dll_t *ol)
+list_assert(dll_t *ol)
 {
   /* head and tail must either both exist or this is an empty list */
   assert((!ol->head && !ol->tail) || (ol->head && ol->tail));
@@ -30,7 +30,7 @@ list_assert(const dll_t *ol)
 }
 
 static void
-link_assert(const dll_link_t *li)
+link_assert(dll_link_t *li)
 {
   assert(!li->prev || (li->prev->next == li));
 
@@ -79,7 +79,7 @@ dll_enq(dll_t *ol,
 }
 
 /* pop removes an element at the head of the list */
-void*
+void *
 dll_pop(dll_t *ol)
 {
   char *obuf;

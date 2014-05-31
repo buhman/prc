@@ -8,17 +8,18 @@
 #include "prc.h"
 
 static prc_plugin_cmd_t dice_cmd;
+prc_tor_t prc_ctor;
 
-static char *d1[] = {
+static const char *d1[] = {
   "\u2609", /* ☉ */
 };
 
-static char *d2[] = {
+static const char *d2[] = {
   "\u2686", /* ⚆ */
   "\u2687", /* ⚇ */
 };
 
-static char *d6[] = {
+static const char *d6[] = {
   "\u2680", /* ⚀ */
   "\u2681", /* ⚁ */
   "\u2682", /* ⚂ */
@@ -27,8 +28,7 @@ static char *d6[] = {
   "\u2685", /* ⚅ */
 };
 
-static char *dx[] = {
-
+static const char *dx[] = {
   "\u2460", /* (1) */
   "\u2461", /* (2) */
   "\u2462", /* (3) */
@@ -93,13 +93,14 @@ static void
 dice_cmd(dll_t *wq, char *prefix, char* target, char *args)
 {
   long long num, i, flen, nface;
-  char *buf, *bufi, *tok, **faces;
+  char *buf, *bufi, *tok;
+  const char **faces;
 
+  nface = 6;
   if (!args)
     num = 1;
   else {
     tok = strchr(args, ' ');
-    nface = 6;
     if (tok) {
       *tok = '\0';
       nface = strtoll(tok + 1, &tok, 10);

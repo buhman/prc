@@ -28,13 +28,13 @@ int
 term_read(struct epoll_event *ev);
 
 int
-term_parse();
+term_parse(void);
 
 int
 term_write(struct epoll_event *ev);
 
 void
-term_printf(char *format, ...);
+term_printf(const char *format, ...);
 
 int
-term_setup();
+term_setup(void);

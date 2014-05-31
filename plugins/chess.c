@@ -11,7 +11,7 @@ prc_plugin_sym_t prc_sym[] = {
   {"snap", snap_cmd}
 };
 
-static char *board[8] = {
+static const char *board[8] = {
   B_RO " " B_KN " " B_BI " " B_QU " " B_KI " " B_BI " " B_KN " " B_RO, //8
   B_PA " " B_PA " " B_PA " " B_PA " " B_PA " " B_PA " " B_PA " " B_PA,
   ELPS " " ELPS " " ELPS " " ELPS " " ELPS " " ELPS " " ELPS " " ELPS,
@@ -39,13 +39,15 @@ autoprint_cmd(dll_t *wq, char *prefix, char* target, char *args)
 static void
 print_cmd(dll_t *wq, char *prefix, char* target, char *args)
 {
-  char **b, **bi, **bii, *move;
+  char **b, **bi, **bii;
+  const char *move;
+  dll_link_t *li;
 
   b = malloc(sizeof(board));
-  for (bii = b, bi = board; bii < b + 8; bi++, bii++)
+  for (bii = b, bi = (char**)board; bii < b + 8; bi++, bii++)
     *bii = strdup(*bi);
 
-  dll_link_t *li = moves->tail;
+  li = moves->tail;
 
   while (li) {
     move = li->buf;

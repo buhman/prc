@@ -26,26 +26,23 @@ prc_prefix_parse(char *prefix, enum prefix_cp comp)
 }
 
 char*
-prc_msg(char *cmd, ...)
+prc_msg(const char *cmd, ...)
 {
   va_list ap;
-  char *arg = cmd;
-
   char *buf = calloc(1, MSG_SIZE);
-
   int len, offset;
 
   va_start(ap, cmd);
 
-  while (arg != NULL) {
+  while (cmd != NULL) {
 
     len = strlen(buf);
-    if ((*arg == ':' || *arg == '\001') && *(arg + 1) == '\0')
-      snprintf(buf + len, MSG_SIZE - (3 + len), arg);
+    if ((*cmd == ':' || *cmd == '\001') && *(cmd + 1) == '\0')
+      snprintf(buf + len, MSG_SIZE - (3 + len), cmd);
     else
-      snprintf(buf + len, MSG_SIZE - (3 + len), "%s ", arg);
+      snprintf(buf + len, MSG_SIZE - (3 + len), "%s ", cmd);
 
-    arg = va_arg(ap, char*);
+    cmd = va_arg(ap, char*);
   }
 
   va_end(ap);
@@ -61,7 +58,7 @@ prc_msg(char *cmd, ...)
 }
 
 prc_plugin_msg_t*
-prc_msg2(char *cmd, char *target, char *format, ...)
+prc_msg2(const char *cmd, const char *target, const char *format, ...)
 {
   char *buf = malloc(MSG_SIZE);
   prc_plugin_msg_t *msg = malloc(sizeof(prc_plugin_msg_t));
@@ -81,7 +78,7 @@ prc_msg2(char *cmd, char *target, char *format, ...)
 }
 
 char*
-prc_msg3(char *format, ...)
+prc_msg3(const char *format, ...)
 {
   char *buf = malloc(MSG_SIZE);
 
