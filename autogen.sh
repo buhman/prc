@@ -10,4 +10,4 @@ fi
 
 autoreconf --force --install --verbose
 
-./configure $@
+./configure -C $@

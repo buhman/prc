@@ -11,6 +11,10 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include "db.h"
+#include "tag.h"
+#include "row.h"
+
 #include "proto.h"
 #include "event.h"
 #include "term.h"
@@ -25,6 +29,9 @@ static char *parse_bufi = NULL;
 struct epoll_event proto_cev;
 event_handler_t *proto_ceh;
 
+bdb_t *bdb;
+int tag;
+
 int
 proto_register(int epfd,
                const char *node,
@@ -33,6 +40,17 @@ proto_register(int epfd,
 {
   int sfd, err;
   dll_t *wq;
+
+  bdb = malloc(sizeof(bdb_t));
+  err = bdb_db_open("prc.bdb", bdb);
+  if (err < 0) {
+    perror("bdb_db_open()");
+    return err;
+  }
+
+  tag = bdb_tag_find("default",bdb);
+  if (tag < 0)
+    tag = bdb_tag_add("default", bdb);
 
   sfd = proto_connect(node, service);
   if (sfd < 0) {
@@ -165,6 +183,7 @@ int
 proto_parse_buf(struct epoll_event *ev,
                 char *buf, size_t len)
 {
+  int err;
   char *ptr;
 
   if (parse_buf == NULL) {
@@ -182,6 +201,11 @@ proto_parse_buf(struct epoll_event *ev,
     ptr = memchr(parse_buf, '\r', parse_bufi - parse_buf);
 
     if (ptr && ptr + 1 < parse_bufi && *(ptr + 1) == '\n') {
+
+      *ptr = '\0';
+      err = bdb_row_push(tag, parse_buf, 1 + ptr - parse_buf, bdb);
+      if (err < 0)
+        perror("bdb_row_push()");
 
       proto_parse_line(ev, parse_buf, ptr - parse_buf);
 

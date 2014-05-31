@@ -4,7 +4,8 @@ prc_CFLAGS = \
 	$(AM_CFLAGS) \
 	$(WARNING_CFLAGS) \
 	$(GSASL_CFLAGS) \
-	-I$(top_srcdir)/lib
+	-I$(top_srcdir)/lib \
+	-I$(top_srcdir)/bdb/src
 
 prc_SOURCES = \
 	event.c event.h \
@@ -19,6 +20,7 @@ prc_SOURCES = \
 prc_LDADD = \
 	$(GSASL_LIBS) \
 	$(top_builddir)/lib/libprc.la \
+	$(top_builddir)/bdb/src/libbdb.la \
 	-ldl
 
 prc_LDFLAGS = \

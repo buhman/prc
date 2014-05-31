@@ -42,6 +42,7 @@ config.h.in
 config.log
 config.status
 config.sub
+config.cache
 db
 libtool
 ltmain.sh
@@ -51,3 +52,4 @@ stamp-h1
 # dots
 .*
 !/.gitignore
+*.bdb
