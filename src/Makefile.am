@@ -1,5 +1,3 @@
-include ../common.am
-
 bin_PROGRAMS = prc
 
 prc_CFLAGS = \
