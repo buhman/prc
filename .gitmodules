@@ -1,0 +1,3 @@
+[submodule "bdb"]
+	path = bdb
+	url = https://buhman.org/git/bdb.git
