@@ -1,11 +1,13 @@
 #include <stdio.h>
 
+#include "buf.h"
+
 int
-printbuf(char *buf, int len)
+printbuf(void *buf, int len)
 {
   char *bufi = buf;
 
-  while (bufi < buf + len) {
+  while (bufi < (char*)buf + len) {
     if (*bufi > 32 && *bufi < 127)
       fprintf(stderr, "%c ", (unsigned char)*bufi);
     else

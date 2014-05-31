@@ -2,9 +2,11 @@
 
 #include <gsasl.h>
 
+#include "sasl.h"
+
 int
-sasl_auth(char *authid,
-          char *password,
+sasl_auth(const char *authid,
+          const char *password,
           char **obuf)
 {
   Gsasl *ctx;

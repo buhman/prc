@@ -3,9 +3,9 @@
 
 #include "prc.h"
 #include "sasl.h"
-#include "handler.h"
 #include "term.h"
 #include "plugin.h"
+#include "handler.h"
 
 static cmd_handler_t handler_cap;
 static cmd_handler_t handler_authenticate;
@@ -206,21 +206,21 @@ handler_privmsg(dll_t *wq, char *prefix, char *buf)
   } /* ... */
 
   {
-    prc_plugin_msg_t *msg;
+    prc_plugin_msg_t *pmsg;
 
-    while ((msg = dll_pop(plugin_wq)) != NULL) {
+    while ((pmsg = dll_pop(plugin_wq)) != NULL) {
 
       if (redirect && *(redirect + 1) == '>')
-        dll_enq(wq, prc_msg3("%s %s :%s\r\n", msg->cmd, redirect + 2,
-                              msg->buf));
+        dll_enq(wq, prc_msg3("%s %s :%s\r\n", pmsg->cmd, redirect + 2,
+                              pmsg->buf));
       else if (redirect)
-        dll_enq(wq, prc_msg3("%s %s :%s: %s\r\n", msg->cmd, msg->target,
-                             redirect + 1, msg->buf));
+        dll_enq(wq, prc_msg3("%s %s :%s: %s\r\n", pmsg->cmd, pmsg->target,
+                             redirect + 1, pmsg->buf));
       else
-        dll_enq(wq, prc_msg(msg->cmd, msg->target, ":", msg->buf, NULL));
+        dll_enq(wq, prc_msg(pmsg->cmd, pmsg->target, ":", pmsg->buf, NULL));
 
-      free(msg->buf);
-      free(msg);
+      free(pmsg->buf);
+      free(pmsg);
     }
   } /* ... */
 }

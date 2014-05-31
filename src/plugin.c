@@ -13,7 +13,7 @@ static plugin_handle_ht_t *handle_head;
 static plugin_ht_t *plugin_head;
 
 static int
-plugin_register(char *key, prc_plugin_cmd_t *func)
+plugin_register(const char *key, prc_plugin_cmd_t *func)
 {
   plugin_ht_t *item, *_item;
 
@@ -34,7 +34,7 @@ plugin_register(char *key, prc_plugin_cmd_t *func)
 }
 
 static int
-plugin_deregister(char *key)
+plugin_deregister(const char *key)
 {
   plugin_ht_t *item;
 
@@ -172,7 +172,7 @@ plugin_unload(char *name)
 
 void
 plugin_lookup(dll_t *wq, char *prefix, char *target,
-              char *cmd, char *args) {
+              const char *cmd, char *args) {
 
   plugin_ht_t *item;
 

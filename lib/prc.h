@@ -13,16 +13,18 @@ typedef struct prc_plugin_sym prc_plugin_sym_t;
 
 typedef void (prc_plugin_cmd_t)(dll_t *wq, char *prefix, char *target, char *args);
 
+typedef int (prc_tor_t)(void);
+
 struct prc_plugin_sym {
-  char *key;
+  const char *key;
   prc_plugin_cmd_t *func;
 };
 
 typedef struct prc_plugin_msg prc_plugin_msg_t;
 
 struct prc_plugin_msg {
-  char *cmd;
-  char *target;
+  const char *cmd;
+  const char *target;
   char *buf;
 };
 
@@ -36,10 +38,10 @@ char*
 prc_prefix_parse(char *prefix, enum prefix_cp comp);
 
 char*
-prc_msg(char *cmd, ...);
+prc_msg(const char *cmd, ...);
 
 prc_plugin_msg_t*
-prc_msg2(char *cmd, char *target, char *format, ...);
+prc_msg2(const char *cmd, const char *target, const char *format, ...);
 
 char*
-prc_msg3(char *format, ...);
+prc_msg3(const char *format, ...);

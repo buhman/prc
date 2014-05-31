@@ -28,3 +28,6 @@ enum position {
   X2,
   Y2,
 };
+
+prc_tor_t prc_ctor;
+prc_tor_t prc_dtor;

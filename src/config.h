@@ -1,3 +1,5 @@
+#pragma once
+
 #define MAX_EVENTS 2
 
 #define IRC_HOST "irc.freenode.net"

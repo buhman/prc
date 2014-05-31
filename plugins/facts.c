@@ -14,7 +14,7 @@ prc_plugin_sym_t prc_sym[] = {
 };
 
 static fact_ht_t *facts_head;
-static char *db_path;
+static const char *db_path;
 
 static void
 facts_find_handler(dll_t *wq, char *prefix, char *target, char *tok)
@@ -39,7 +39,8 @@ facts_find_handler(dll_t *wq, char *prefix, char *target, char *tok)
 static void
 facts_add_handler(dll_t *wq, char *prefix, char *target, char *tok)
 {
-  char *key, *fact, *status, *sp;
+  char *key, *fact, *sp;
+  const char *status;
 
   if (!tok)
     return;
@@ -61,8 +62,8 @@ facts_add_handler(dll_t *wq, char *prefix, char *target, char *tok)
 }
 
 static int
-facts_add(char *key,
-          char *fact)
+facts_add(const char *key,
+          const char *fact)
 {
   {
     fact_ht_t *item;
@@ -109,7 +110,7 @@ facts_add(char *key,
 }
 
 static char *
-facts_get(char *key)
+facts_get(const char *key)
 {
   fact_ht_t *item;
   HASH_FIND_STR(facts_head, key, item);
@@ -123,7 +124,7 @@ facts_get(char *key)
 }
 
 static int
-facts_init_ht(char *path)
+facts_init_ht(const char *path)
 {
   int dbfd, err;
   fact_ht_t *item;

@@ -13,9 +13,9 @@
 #include <sys/ioctl.h>
 
 #include "event.h"
-#include "term.h"
 #include "buf.h"
 #include "prc.h"
+#include "term.h"
 
 static struct winsize ws;
 dll_t *term_wq;
@@ -57,7 +57,7 @@ term_register(int epfd)
 
   term_wq = calloc(1, sizeof(dll_t));
 
-  err = term_setup(term_wq);
+  err = term_setup();
   if (err < 0) {
     perror("term_setup()");
     return err;
@@ -207,7 +207,7 @@ term_write(struct epoll_event *ev)
 }
 
 void
-term_printf(char *format, ...)
+term_printf(const char *format, ...)
 {
   char *buf = malloc(MSG_SIZE);
 
@@ -229,7 +229,7 @@ term_printf(char *format, ...)
 }
 
 int
-term_setup()
+term_setup(void)
 {
   int err, mode;
   struct termios t;

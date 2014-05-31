@@ -8,7 +8,9 @@
 
 static prc_plugin_cmd_t dice_cmd;
 
-static char *faces[] = {
+prc_tor_t prc_ctor;
+
+static const char *faces[] = {
   "\u2680", /* ⚀ */
   "\u2681", /* ⚁ */
   "\u2682", /* ⚂ */

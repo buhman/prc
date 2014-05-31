@@ -20,7 +20,7 @@ struct plugin_ht_t {
 
 void
 plugin_lookup(dll_t *wq, char *prefix, char *target,
-              char *cmd, char *args);
+              const char *cmd, char *args);
 
 void
 plugin_cmd(dll_t *wq, char *prefix, char *target, char *buf);

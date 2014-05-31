@@ -14,15 +14,15 @@ struct handler_ht {
 typedef struct handler_sym handler_sym_t;
 
 struct handler_sym {
-  char *name;
+  const char *name;
   cmd_handler_t *func;
 };
 
 void
-handler_init();
+handler_init(void);
 
 void
-handler_free();
+handler_free(void);
 
 void
 handler_lookup(char *command,

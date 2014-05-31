@@ -1,6 +1,6 @@
 #pragma once
 
 int
-sasl_auth(char *authid,
-          char *password,
+sasl_auth(const char *authid,
+          const char *password,
           char **obuf);
