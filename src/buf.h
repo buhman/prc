@@ -1,4 +1,4 @@
 #pragma once
 
 int
-printbuf(void *buf, int len);
+printbuf(const void *buf, int len);

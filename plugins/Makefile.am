@@ -12,7 +12,8 @@ lib_LTLIBRARIES = \
 	librot13.la \
 	libecho.la \
 	libmagic.la \
-	libdice.la
+	libdice.la \
+	libfullwidth.la
 
 libtime_la_SOURCES = \
 	time.c
@@ -37,3 +38,6 @@ libmagic_la_SOURCES = \
 
 libdice_la_SOURCES = \
 	dice.c
+
+libfullwidth_la_SOURCES = \
+	fullwidth.c

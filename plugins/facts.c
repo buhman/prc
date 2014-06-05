@@ -214,7 +214,7 @@ prc_ctor()
 {
   int err;
 
-  err = facts_init_ht("db");
+  err = facts_init_ht("/home/zack/db");
   if (err < 0) {
     fprintf(stderr, "facts_init_ht()\n");
     return -1;

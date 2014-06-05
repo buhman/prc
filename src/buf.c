@@ -3,9 +3,9 @@
 #include "buf.h"
 
 int
-printbuf(void *buf, int len)
+printbuf(const void *buf, int len)
 {
-  char *bufi = buf;
+  const char *bufi = buf;
 
   while (bufi < (char*)buf + len) {
     if (*bufi > 32 && *bufi < 127)

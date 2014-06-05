@@ -49,8 +49,8 @@ prc_msg(const char *cmd, ...)
 
   len = strlen(buf);
   offset = 1;
-  while ((unsigned char)*(buf + len - (offset + 1)) > 127)
-    offset++;
+  /*while ((unsigned char)*(buf + len - (offset + 1)) > 127)
+    offset++;*/
 
   sprintf(buf + len - offset, "\r\n");
 
