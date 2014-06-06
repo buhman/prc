@@ -4,23 +4,6 @@ prc (core)
 TODO
 ----
 
-### Add 'buffer' (and logging) support
-
-Implementation is planned to be via memory-mapped file access, one
-file for each buffer. (Active) buffer output would be not only written
-to the terminal, but also to said memory-mapped (log) file.
-
-This also implies the ability to perform complete redraws of contents
-upon TE resize events/etc.. in addition to redraws necessary to switch
-terminal output between buffers.
-
-### Runtime configuration
-
-Currently most "configuration" such as credentials, servers to connect
-to, channels to join, etc.. are hard-coded in prc sources; these
-rather common things should be moved to a separate runtime-modifiable
-configuration file.
-
 ### Plugin sandboxing/IPC
 
 A plugin that {segfaults,does invalid/evil things with memory,etc}
@@ -34,6 +17,24 @@ to a new instance of prc--most of the startup process involves
 stateful server-side cruft, so this would effectively reduce full
 restart times to ~0 (compared to the current ~5+ second startup
 sequence).
+
+### buffer and tag mappings
+
+Incoming protocol messages should be tagged based on match -> tag
+mappings that the user creates, and stored in the log database
+appropriately.
+
+Similarly, the user should be able to map database tags to buffers,
+and the terminal should draw the selected buffer(s) appropriately.
+
+Interleaving multiple tags in the same buffer is also probably
+desired, but would require significant modifications to the internal
+row linkage format in BDB.
+
+### write queue selection
+
+The terminal should be able to select the write queue (network) that
+messages are directed to.
 
 ### World Domination
 
