@@ -11,6 +11,7 @@
 #include "proto.h"
 #include "event.h"
 #include "handler.h"
+#include "cfg.h"
 
 #include "prc.h"
 
@@ -26,6 +27,21 @@ main(int argc,
   int epfd, evfd, err, events, terminate = 1;
   struct epoll_event evs[MAXEVENT], *evi;
   event_handler_t *ehi;
+  cfg_t *cfg;
+
+  {
+    cfg = cfg_create();
+
+    err = cfg_open("../prc.cfg", cfg->file);
+    if (err < 0) {
+      perror("cfg_open()");
+      exit(EXIT_FAILURE);
+    }
+
+    err = cfg_parse(cfg);
+    if (err < 0)
+      exit(EXIT_FAILURE);
+  } /* ... */
 
   {
     epfd = epoll_create1(EPOLL_CLOEXEC);
@@ -148,7 +164,15 @@ main(int argc,
 
     close(epfd);
     close(evfd);
-  }
 
-  return 0;
+    err = cfg_close(cfg->file);
+    if (err < 0) {
+      perror("cfg_close()");
+      exit(EXIT_FAILURE);
+    }
+
+    cfg_free(cfg);
+  } /* ... */
+
+  return EXIT_SUCCESS;
 }
