@@ -50,10 +50,6 @@ dll_enq(dll_t *ol,
   li = calloc(1, sizeof(dll_link_t));
   li->buf = buf;
 
-#ifdef DEBUG_ASSERT
-  list_assert(ol);
-#endif
-
   {
     /* prev is NULL if tail does not yet exist */
     li->prev = ol->tail;
@@ -72,10 +68,6 @@ dll_enq(dll_t *ol,
     /* this is at the end of the list, next is always NULL */
     li->next = NULL;
   } /* ... */
-
-#ifdef DEBUG_ASSERT
-  list_assert(ol);
-#endif
 }
 
 /* pop removes an element at the head of the list */
@@ -84,10 +76,6 @@ dll_pop(dll_t *ol)
 {
   char *obuf;
   dll_link_t *li;
-
-#ifdef DEBUG_ASSERT
-  list_assert(ol);
-#endif
 
   {
     if (!ol->head)
@@ -106,10 +94,6 @@ dll_pop(dll_t *ol)
       li->next->prev = NULL;
   } /* ... */
 
-#ifdef DEBUG_ASSERT
-  list_assert(ol);
-#endif
-
   obuf = li->buf;
   free(li);
 
@@ -125,10 +109,6 @@ dll_push(dll_t *ol,
 
   li = calloc(1, sizeof(dll_link_t));
   li->buf = buf;
-
-#ifdef DEBUG_ASSERT
-  list_assert(ol);
-#endif
 
   {
     /* next is NULL if head does not yet exist */
@@ -148,10 +128,6 @@ dll_push(dll_t *ol,
     /* prev does not exist */
     li->prev = NULL;
   } /* ... */
-
-#ifdef DEBUG_ASSERT
-  list_assert(ol);
-#endif
 }
 
 /* remove link from list by updating neighboring links */
@@ -159,11 +135,6 @@ void
 dll_remove(dll_t *ol,
            dll_link_t *li)
 {
-#ifdef DEBUG_ASSERT
-  list_assert(ol);
-  link_assert(li);
-#endif
-
   {
     /* previous link's next should be this link's next */
     if (li->prev)
@@ -177,12 +148,6 @@ dll_remove(dll_t *ol,
     else
       ol->tail = li->prev;
   } /* ... */
-
-#ifdef DEBUG_ASSERT
-  list_assert(ol);
-  link_assert(li->next);
-  link_assert(li->prev);
-#endif
 
   free(li);
 }
@@ -199,11 +164,6 @@ dll_insert(dll_t *ol,
   nli = malloc(sizeof(dll_link_t));
   nli->buf = buf;
 
-#ifdef DEBUG_ASSERT
-  list_assert(ol);
-  link_assert(li);
-#endif
-
   {
     /* the new link's prev is this link */
     nli->prev = li;
@@ -219,10 +179,4 @@ dll_insert(dll_t *ol,
 
     li->next = nli;
   } /* ... */
-
-#ifdef DEBUG_ASSERT
-  list_assert(ol);
-  link_assert(li);
-  link_assert(nli);
-#endif
 }
