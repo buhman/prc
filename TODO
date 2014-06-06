@@ -31,11 +31,6 @@ Interleaving multiple tags in the same buffer is also probably
 desired, but would require significant modifications to the internal
 row linkage format in BDB.
 
-### write queue selection
-
-The terminal should be able to select the write queue (network) that
-messages are directed to.
-
 ### World Domination
 
 Sandbox

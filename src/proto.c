@@ -26,11 +26,60 @@
 static char *parse_buf = NULL;
 static char *parse_bufi = NULL;
 
-struct epoll_event proto_cev;
-event_handler_t *proto_ceh;
+static dll_t proto_nodes = {
+  .head = NULL,
+  .tail = NULL,
+};
 
-bdb_t *bdb;
-int tag;
+proto_t proto = {
+  .cev = NULL,
+  .ceh = NULL,
+  .node = NULL,
+  .bdb = NULL,
+  .tag = -1,
+};
+
+int
+proto_set_node(char *sub)
+{
+  dll_link_t *li;
+  proto_node_t *node;
+  char *buf;
+
+  li = proto_nodes.head;
+
+  while (li) {
+
+    node = li->buf;
+    buf = strstr(node->name, sub);
+
+    if (buf) {
+
+      proto.cev = node->ev;
+      proto.ceh = node->ev->data.ptr;
+      proto.node = node->name;
+
+      return 0;
+    }
+
+    li = li->next;
+  }
+
+  return -1;
+}
+
+void
+proto_add_node(const char *node, struct epoll_event *ev)
+{
+  proto_node_t *n;
+
+  n = malloc(sizeof(proto_node_t));
+
+  n->name = node;
+  n->ev = ev;
+
+  dll_enq(&proto_nodes, n);
+}
 
 int
 proto_register(int epfd,
@@ -41,17 +90,18 @@ proto_register(int epfd,
 {
   int sfd, err;
   dll_t *wq;
+  struct epoll_event *ev;
 
-  bdb = malloc(sizeof(bdb_t));
-  err = bdb_db_open("prc.bdb", bdb);
+  proto.bdb = malloc(sizeof(bdb_t));
+  err = bdb_db_open("prc.bdb", proto.bdb);
   if (err < 0) {
     perror("bdb_db_open()");
     return err;
   }
 
-  tag = bdb_tag_find("default",bdb);
-  if (tag < 0)
-    tag = bdb_tag_add("default", bdb);
+  proto.tag = bdb_tag_find("default", proto.bdb);
+  if (proto.tag < 0)
+    proto.tag = bdb_tag_add("default", proto.bdb);
 
   sfd = proto_connect(node, service);
   if (sfd < 0) {
@@ -60,15 +110,20 @@ proto_register(int epfd,
   }
 
   wq = calloc(1, sizeof(dll_t));
+  ev = malloc(sizeof(struct epoll_event));
 
-  err = event_add(epfd, sfd, EPOLLIN, proto_read, proto_write, wq, cfg, &proto_cev);
+  err = event_add(epfd, sfd, EPOLLIN, proto_read, proto_write, wq, cfg, ev);
   if (err < 0) {
     free(wq);
     perror("event_add()");
     return err;
   }
 
-  proto_ceh = (event_handler_t*)proto_cev.data.ptr;
+  proto.cev = ev;
+  proto.ceh = ev->data.ptr;
+  proto.node = node;
+
+  proto_add_node(node, proto.cev);
 
   *owq = wq;
 
@@ -204,7 +259,7 @@ proto_parse_buf(struct epoll_event *ev,
     if (ptr && ptr + 1 < parse_bufi && *(ptr + 1) == '\n') {
 
       *ptr = '\0';
-      err = bdb_row_push(tag, parse_buf, 1 + ptr - parse_buf, bdb);
+      err = bdb_row_push(proto.tag, parse_buf, 1 + ptr - parse_buf, proto.bdb);
       if (err < 0)
         perror("bdb_row_push()");
 

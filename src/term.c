@@ -16,6 +16,7 @@
 #include "buf.h"
 #include "prc.h"
 #include "term.h"
+#include "proto.h"
 
 static struct winsize ws;
 dll_t *term_wq;
@@ -24,8 +25,6 @@ static struct epoll_event stdout_ev;
 static char *line_buf, *line_bufi;
 
 static char scratch[MSG_SIZE * 2];
-
-extern event_handler_t *proto_ceh;
 
 static char *ttarget = NULL;
 
@@ -135,7 +134,7 @@ term_me()
   if (ttarget) {
     tok = strchr(line_buf, ' ');
     if (tok)
-      dll_enq(proto_ceh->wq, prc_msg("PRIVMSG", ttarget,
+      dll_enq(proto.ceh->wq, prc_msg("PRIVMSG", ttarget,
                                      ":\001ACTION", tok + 1, "\001", NULL));
   }
   else
@@ -148,7 +147,7 @@ static int
 term_msg()
 {
   if (ttarget)
-    dll_enq(proto_ceh->wq, prc_msg("PRIVMSG", ttarget, ":", line_buf, NULL));
+    dll_enq(proto.ceh->wq, prc_msg("PRIVMSG", ttarget, ":", line_buf, NULL));
   else
     return -1;
 
@@ -171,17 +170,33 @@ term_target()
   return 0;
 }
 
+static int
+term_network()
+{
+  char *tok;
+
+  tok = strchr(line_buf, ' ');
+  if (tok) {
+    proto_set_node(tok + 1);
+    term_printf("network: [%s]", proto.node);
+  }
+
+  return 0;
+}
+
 int
 term_parse()
 {
   *line_bufi = '\0';
 
-  if (memcmp(line_buf, "/act", 3) == 0)
+  if (memcmp(line_buf, "/act", 4) == 0)
     term_me();
   else if (memcmp(line_buf, "/tgt", 4) == 0)
     term_target();
+  else if (memcmp(line_buf, "/net", 4) == 0)
+    term_network();
   else if (*line_buf == ':')
-    dll_enq(proto_ceh->wq, prc_msg(line_buf + 1, NULL));
+    dll_enq(proto.ceh->wq, prc_msg(line_buf + 1, NULL));
   else
     term_msg();
 

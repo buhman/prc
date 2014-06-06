@@ -3,6 +3,33 @@
 #include <sys/epoll.h>
 #include "dll.h"
 #include "cfg.h"
+#include "event.h"
+#include "bdb.h"
+
+typedef struct proto_node proto_node_t;
+
+struct proto_node {
+  const char *name;
+  struct epoll_event *ev;
+};
+
+typedef struct proto proto_t;
+
+struct proto {
+  struct epoll_event *cev;
+  event_handler_t *ceh;
+  const char *node;
+  bdb_t *bdb;
+  int tag;
+};
+
+extern proto_t proto;
+
+void
+proto_add_node(const char *node, struct epoll_event *ev);
+
+int
+proto_set_node(char *sub);
 
 int
 proto_register(int epfd,

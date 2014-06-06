@@ -18,9 +18,6 @@
 
 #define MAXEVENT 5
 
-extern struct epoll_event proto_cev;
-extern event_handler_t *proto_ceh;
-
 int
 main(int argc, char **argv)
 {
@@ -123,7 +120,7 @@ main(int argc, char **argv)
           exit(EXIT_FAILURE);
       }
 
-      if (!ehi->wq) /* HACK? */
+      if (!ehi->wq || !proto.ceh->wq) /* HACKS */
         continue;
 
       /* evi->events will only include the current events; HACK adds EPOLLIN */
@@ -133,9 +130,9 @@ main(int argc, char **argv)
       else if (!ehi->wq->head && (evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
         //evi->events &= ~EPOLLOUT;
         evi->events = EPOLLIN;
-      else if (ehi->fd == STDIN_FILENO && proto_ceh->wq->head) {
-        proto_cev.events = EPOLLOUT | EPOLLIN;
-        err = epoll_ctl(epfd, EPOLL_CTL_MOD, proto_ceh->fd, &proto_cev);
+      else if (ehi->fd == STDIN_FILENO && proto.ceh->wq->head) {
+        proto.cev->events = EPOLLOUT | EPOLLIN;
+        err = epoll_ctl(epfd, EPOLL_CTL_MOD, proto.ceh->fd, proto.cev);
         if (err < 0) {
           perror("epoll_ctl()");
           exit(EXIT_FAILURE);
