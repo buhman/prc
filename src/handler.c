@@ -6,6 +6,7 @@
 #include "term.h"
 #include "plugin.h"
 #include "handler.h"
+#include "proto.h"
 
 static cmd_handler_t handler_cap;
 static cmd_handler_t handler_authenticate;
@@ -57,7 +58,7 @@ handler_free()
 
 void
 handler_lookup(char *command,
-               dll_t *wq,
+               event_handler_t *eh,
                char *prefix,
                char *buf)
 {
@@ -66,48 +67,57 @@ handler_lookup(char *command,
   HASH_FIND_STR(handler_head, command, item);
 
   if (item != NULL)
-    (item->func)(wq, prefix, buf);
+    (item->func)(eh, prefix, buf);
 }
 
 static void
-handler_cap(dll_t *wq, char *prefix, char *buf)
+handler_cap(event_handler_t *eh, char *prefix, char *buf)
 {
   /* lazy */
 
-  dll_enq(wq, prc_msg("AUTHENTICATE PLAIN", NULL));
+  dll_enq(eh->wq, prc_msg("AUTHENTICATE PLAIN", NULL));
 }
 
 static void
-handler_authenticate(dll_t *wq, char *prefix, char *buf)
+handler_authenticate(event_handler_t *eh, char *prefix, char *buf)
 {
   char *cred;
 
   /* lazy */
 
-  if (sasl_auth("buhmin", "WorldDomination", &cred) < 0)
+  if (sasl_auth(eh->cfg->nick, eh->cfg->password, &cred) < 0)
     return;
 
-  dll_enq(wq, prc_msg("AUTHENTICATE", cred, NULL));
+  dll_enq(eh->wq, prc_msg("AUTHENTICATE", cred, NULL));
 
   free(cred);
 }
 
 static void
-handler_capend(dll_t *wq, char *prefix, char *buf)
+handler_capend(event_handler_t *eh, char *prefix, char *buf)
 {
-  dll_enq(wq, prc_msg("CAP END", NULL));
+  dll_enq(eh->wq, prc_msg("CAP END", NULL));
 }
 
 static void
-handler_ping(dll_t *wq, char *prefix, char *buf)
+handler_ping(event_handler_t *eh, char *prefix, char *buf)
 {
-  dll_enq(wq, prc_msg("PONG buhmin", NULL));
+  dll_enq(eh->wq, prc_msg3("PONG %s\r\n", (char*)eh->cfg->nick));
 }
 
 static void
-handler_welcome(dll_t *wq, char *prefix, char *buf)
+handler_welcome(event_handler_t *eh, char *prefix, char *buf)
 {
-  dll_enq(wq, prc_msg("JOIN ##archlinux-botabuse", NULL));
+  dll_link_t *li;
+
+  li = eh->cfg->channels->head;
+
+  while (li) {
+
+    dll_enq(eh->wq, prc_msg3("JOIN %s\r\n", (char*)li->buf));
+
+    li = li->next;
+  }
 }
 
 static void
@@ -144,7 +154,7 @@ plugin_switch(char *prefix, char *target, char *msg, char *args)
 }
 
 static void
-handler_privmsg(dll_t *wq, char *prefix, char *buf)
+handler_privmsg(event_handler_t *eh, char *prefix, char *buf)
 {
   char *tok, *target, *msg, *redirect;
 
@@ -174,7 +184,7 @@ handler_privmsg(dll_t *wq, char *prefix, char *buf)
     if (d1) {
       d2 = strchr(d1 + 1, ']');
       if (!d2) {
-        dll_enq(wq, prc_msg("PRIVMSG", target, ":[syntax error]", NULL));
+        dll_enq(eh->wq, prc_msg("PRIVMSG", target, ":[syntax error]", NULL));
         return;
       }
 
@@ -211,16 +221,53 @@ handler_privmsg(dll_t *wq, char *prefix, char *buf)
     while ((pmsg = dll_pop(plugin_wq)) != NULL) {
 
       if (redirect && *(redirect + 1) == '>')
-        dll_enq(wq, prc_msg3("%s %s :%s\r\n", pmsg->cmd, redirect + 2,
+        dll_enq(eh->wq, prc_msg3("%s %s :%s\r\n", pmsg->cmd, redirect + 2,
                               pmsg->buf));
       else if (redirect)
-        dll_enq(wq, prc_msg3("%s %s :%s: %s\r\n", pmsg->cmd, pmsg->target,
+        dll_enq(eh->wq, prc_msg3("%s %s :%s: %s\r\n", pmsg->cmd, pmsg->target,
                              redirect + 1, pmsg->buf));
       else
-        dll_enq(wq, prc_msg(pmsg->cmd, pmsg->target, ":", pmsg->buf, NULL));
+        dll_enq(eh->wq, prc_msg(pmsg->cmd, pmsg->target, ":", pmsg->buf, NULL));
 
       free(pmsg->buf);
       free(pmsg);
     }
   } /* ... */
+}
+
+int
+handler_join_networks(int epfd, dll_t *networks)
+{
+  cfg_net_t *net;
+  dll_link_t *li;
+  dll_t *wq;
+
+  li = networks->head;
+
+  while (li) {
+
+    net = li->buf;
+
+    if (!net->nick) {
+      fprintf(stderr, "no nick in %s\n", net->node);
+      return -1;
+    }
+
+    fprintf(stderr, "REG: node: %s ; service: %s\n", net->node, net->service);
+
+    proto_register(epfd, net->node, net->service, net, &wq);
+
+    fprintf(stderr, "REG: write-queue: %p\n", wq);
+
+    if (net->password)
+      dll_enq(wq, prc_msg("CAP REQ :sasl", NULL));
+
+    dll_enq(wq, prc_msg3("NICK %s\r\n", net->nick));
+
+    dll_enq(wq, prc_msg3("USER %s foo bar :buhman's minion\r\n", net->username));
+
+    li = li->next;
+  }
+
+  return 0;
 }

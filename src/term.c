@@ -36,8 +36,7 @@ term_stdout(int epfd)
 
   if (term_wq->head != NULL) {
     err = event_add(epfd, STDOUT_FILENO, EPOLLOUT, NULL,
-                    term_write, NULL,
-                    &stdout_ev);
+                    term_write, NULL, NULL, &stdout_ev);
     if (err < 0)
       perror("event_add() stdout\n");
   }
@@ -63,7 +62,7 @@ term_register(int epfd)
     return err;
   }
 
-  err = event_add(epfd, STDIN_FILENO, EPOLLIN, term_read, NULL, term_wq, NULL);
+  err = event_add(epfd, STDIN_FILENO, EPOLLIN, term_read, NULL, term_wq, NULL, NULL);
   if (err < 0) {
     perror("event_add()");
     return err;

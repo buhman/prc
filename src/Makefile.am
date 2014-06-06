@@ -15,6 +15,7 @@ prc_SOURCES = \
 	sasl.c sasl.h \
 	buf.c buf.h \
 	plugin.c plugin.h \
+	cfg.c cfg.h \
 	prc.c
 
 prc_LDADD = \

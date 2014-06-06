@@ -11,6 +11,8 @@
 #include "proto.h"
 #include "event.h"
 #include "handler.h"
+#include "cfg.h"
+#include "plugin.h"
 
 #include "prc.h"
 
@@ -20,12 +22,26 @@ extern struct epoll_event proto_cev;
 extern event_handler_t *proto_ceh;
 
 int
-main(int argc,
-     char **argv)
+main(int argc, char **argv)
 {
   int epfd, evfd, err, events, terminate = 1;
   struct epoll_event evs[MAXEVENT], *evi;
   event_handler_t *ehi;
+  cfg_t *cfg;
+
+  {
+    cfg = cfg_create();
+
+    err = cfg_open("../prc.cfg", cfg->file);
+    if (err < 0) {
+      perror("cfg_open()");
+      exit(EXIT_FAILURE);
+    }
+
+    err = cfg_parse(cfg);
+    if (err < 0)
+      exit(EXIT_FAILURE);
+  } /* ... */
 
   {
     epfd = epoll_create1(EPOLL_CLOEXEC);
@@ -46,15 +62,15 @@ main(int argc,
   }
 
   {
-    dll_t *wq;
+    err = plugin_cfg(cfg->plugins);
+    if (err < 0)
+      exit(EXIT_FAILURE);
 
     term_register(epfd);
 
-    proto_register(epfd, "dickson.freenode.net", "6667", &wq);
-
-    dll_enq(wq, prc_msg("CAP REQ :sasl", NULL));
-    dll_enq(wq, prc_msg("NICK buhmin", NULL));
-    dll_enq(wq, prc_msg("USER prc foo bar :buhman's minion", NULL));
+    err = handler_join_networks(epfd, cfg->networks);
+    if (err < 0)
+      exit(EXIT_FAILURE);
   }
 
   while (terminate > 0) {
@@ -148,7 +164,15 @@ main(int argc,
 
     close(epfd);
     close(evfd);
-  }
 
-  return 0;
+    err = cfg_close(cfg->file);
+    if (err < 0) {
+      perror("cfg_close()");
+      exit(EXIT_FAILURE);
+    }
+
+    cfg_free(cfg);
+  } /* ... */
+
+  return EXIT_SUCCESS;
 }

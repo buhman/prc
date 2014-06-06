@@ -53,7 +53,7 @@ event_init(int epfd)
   }
 
   {
-    err = event_add(epfd, evfd, EPOLLIN, NULL, NULL, NULL, NULL);
+    err = event_add(epfd, evfd, EPOLLIN, NULL, NULL, NULL, NULL, NULL);
     if (err < 0) {
       perror("event_add");
       return err;
@@ -70,6 +70,7 @@ event_add(int epfd,
           eh_fptr_t *rf,
           eh_fptr_t *wf,
           dll_t *wq,
+          cfg_net_t *cfg,
           struct epoll_event *oev)
 {
   int err;
@@ -83,6 +84,7 @@ event_add(int epfd,
     eh->wf = wf;
     eh->fd = fd;
     eh->wq = wq;
+    eh->cfg = cfg;
 
     ev.events = events;
     ev.data.ptr = eh;
