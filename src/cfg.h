@@ -1,3 +1,5 @@
+#pragma once
+
 typedef struct cfg cfg_t;
 typedef struct cfg_file cfg_file_t;
 typedef struct cfg_net cfg_net_t;

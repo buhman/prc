@@ -2,11 +2,13 @@
 
 #include <sys/epoll.h>
 #include "dll.h"
+#include "cfg.h"
 
 int
 proto_register(int epfd,
                const char *node,
                const char *service,
+               cfg_net_t *cfg,
                dll_t **owq);
 
 int

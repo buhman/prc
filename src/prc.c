@@ -12,6 +12,7 @@
 #include "event.h"
 #include "handler.h"
 #include "cfg.h"
+#include "plugin.h"
 
 #include "prc.h"
 
@@ -21,8 +22,7 @@ extern struct epoll_event proto_cev;
 extern event_handler_t *proto_ceh;
 
 int
-main(int argc,
-     char **argv)
+main(int argc, char **argv)
 {
   int epfd, evfd, err, events, terminate = 1;
   struct epoll_event evs[MAXEVENT], *evi;
@@ -62,15 +62,15 @@ main(int argc,
   }
 
   {
-    dll_t *wq;
+    err = plugin_cfg(cfg->plugins);
+    if (err < 0)
+      exit(EXIT_FAILURE);
 
     term_register(epfd);
 
-    proto_register(epfd, "dickson.freenode.net", "6667", &wq);
-
-    dll_enq(wq, prc_msg("CAP REQ :sasl", NULL));
-    dll_enq(wq, prc_msg("NICK buhmin", NULL));
-    dll_enq(wq, prc_msg("USER prc foo bar :buhman's minion", NULL));
+    err = handler_join_networks(epfd, cfg->networks);
+    if (err < 0)
+      exit(EXIT_FAILURE);
   }
 
   while (terminate > 0) {

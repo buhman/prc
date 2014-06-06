@@ -24,3 +24,6 @@ plugin_lookup(dll_t *wq, char *prefix, char *target,
 
 void
 plugin_cmd(dll_t *wq, char *prefix, char *target, char *buf);
+
+int
+plugin_cfg(dll_t *plugins);

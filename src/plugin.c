@@ -219,3 +219,24 @@ plugin_cmd(dll_t *wq, char *prefix, char *target, char *buf)
   else
     dll_enq(wq, prc_msg2("PRIVMSG", target, "[success]"));
 }
+
+int
+plugin_cfg(dll_t *plugins)
+{
+  dll_link_t *li;
+  int err;
+
+  li = plugins->head;
+
+  while (li) {
+
+    fprintf(stderr, "PLUGIN: %s\n", (char*)li->buf);
+    err = plugin_load((char*)li->buf);
+    if (err < 0)
+      return err;
+
+    li = li->next;
+  }
+
+  return 0;
+}

@@ -1,8 +1,9 @@
 #pragma once
 
 #include "uthash.h"
+#include "event.h"
 
-typedef void (cmd_handler_t)(dll_t *wq, char *prefix, char *buf);
+typedef void (cmd_handler_t)(event_handler_t *eh, char *prefix, char *buf);
 
 typedef struct handler_ht handler_ht_t;
 
@@ -26,6 +27,9 @@ handler_free(void);
 
 void
 handler_lookup(char *command,
-               dll_t *wq,
+               event_handler_t *eh,
                char *prefix,
                char *sp);
+
+int
+handler_join_networks(int epfd, dll_t *networks);

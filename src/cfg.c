@@ -123,7 +123,7 @@ cfg_parse(cfg_t *cfg)
 
       dll_enq(cfg->networks, network);
 
-      fprintf(stderr, "node: %s ; service: %s\n", tok + 2, tok1 + 1);
+      fprintf(stderr, "CFG: node: %s ; service: %s\n", tok + 2, tok1 + 1);
 
       break;
     case CFG_CREDENTIAL:
@@ -139,8 +139,8 @@ cfg_parse(cfg_t *cfg)
 
       tok1 = strchr(tok + 2, '/');
       if (!tok1 || tok1 > bufi) {
-        network->nick = tok + 2;
-        break;
+        fprintf(stderr, "invalid credential declaration: %lld\n", count);
+        return -1;
       }
       *tok1 = '\0';
 
@@ -148,15 +148,15 @@ cfg_parse(cfg_t *cfg)
 
       tok2 = strchr(tok1 + 1, '/');
       if (!tok2 || tok2 > bufi) {
-        fprintf(stderr, "invalid credential declaration: %lld\n", count);
-        return -1;
+        network->username = tok1 + 1;
+        break;
       }
       *tok2 = '\0';
 
       network->username = tok1 + 1;
       network->password = tok2 + 1;
 
-      fprintf(stderr, "creds: [%s] / [%s] / [%s]\n", tok + 2, tok1 + 1, tok2 + 1);
+      fprintf(stderr, "CFG: creds: [%s] / [%s] / [%s]\n", tok + 2, tok1 + 1, tok2 + 1);
 
       break;
     case CFG_CHANNEL:
@@ -167,14 +167,14 @@ cfg_parse(cfg_t *cfg)
 
       dll_enq(network->channels, tok + 2);
 
-      fprintf(stderr, "channel: %s\n", tok + 2);
+      fprintf(stderr, "CFG: channel: %s\n", tok + 2);
 
       break;
     case CFG_PLUGIN:
 
       dll_enq(cfg->plugins, tok + 2);
 
-      fprintf(stderr, "plugin: %s\n", tok + 2);
+      fprintf(stderr, "CFG: plugin: %s\n", tok + 2);
 
       break;
     }

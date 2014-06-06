@@ -36,6 +36,7 @@ int
 proto_register(int epfd,
                const char *node,
                const char *service,
+               cfg_net_t *cfg,
                dll_t **owq)
 {
   int sfd, err;
@@ -60,7 +61,7 @@ proto_register(int epfd,
 
   wq = calloc(1, sizeof(dll_t));
 
-  err = event_add(epfd, sfd, EPOLLIN, proto_read, proto_write, wq, &proto_cev);
+  err = event_add(epfd, sfd, EPOLLIN, proto_read, proto_write, wq, cfg, &proto_cev);
   if (err < 0) {
     free(wq);
     perror("event_add()");
@@ -248,7 +249,7 @@ int proto_parse_line(struct epoll_event *ev,
       continue;
     }
 
-    handler_lookup(bufi, eh->wq, prefix, tok + 1);
+    handler_lookup(bufi, eh, prefix, tok + 1);
 
     break;
   }
