@@ -29,14 +29,14 @@ ctcp_handler(dll_t *wq, char *prefix, char *target, char *args)
 
   if (strcmp("VERSION", args) == 0)
     dll_enq(wq, prc_msg2("NOTICE", prc_prefix_parse(prefix, NICK),
-                         "\001VERSION prc v" PRC_VERSION "\001", NULL));
+                         "\001VERSION prc v" PRC_VERSION "\001"));
   else if (strcmp("FINGER", args) == 0)
     dll_enq(wq, prc_msg2("NOTICE", prc_prefix_parse(prefix, NICK),
-                         "\001FINGER No thanks\001", NULL));
+                         "\001FINGER No thanks\001"));
   else if (strcmp("SOURCE", args) == 0)
     dll_enq(wq, prc_msg2("NOTICE", prc_prefix_parse(prefix, NICK),
-                         "\001SOURCE https://buhman.org/cgit/prc.git\001", NULL));
+                         "\001SOURCE https://buhman.org/cgit/prc.git\001"));
   else if (strcmp("PING", args) == 0 && ts)
     dll_enq(wq, prc_msg2("NOTICE", prc_prefix_parse(prefix, NICK),
-                         "\001PING", ts + 1, "\001", NULL));
+                         "\001PING %s%s", ts + 1, "\001"));
 }
