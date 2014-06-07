@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 #include "uthash.h"
 #include "dll.h"
 
@@ -26,6 +28,14 @@ struct prc_plugin_msg {
   const char *cmd;
   const char *target;
   char *buf;
+};
+
+typedef struct prc_db_msg prc_db_msg_t;
+
+struct prc_db_msg {
+  uint64_t prefix;
+  uint64_t command;
+  uint64_t params;
 };
 
 enum prefix_cp {

@@ -14,30 +14,24 @@
 #include "db.h"
 #include "tag.h"
 #include "row.h"
+#include "malloc.h"
+#include "util.h"
 
 #include "proto.h"
 #include "event.h"
 #include "term.h"
 #include "handler.h"
 #include "buf.h"
+#include "prc.h"
 
 #define BUFSIZE 512
 
 static char *parse_buf = NULL;
 static char *parse_bufi = NULL;
 
-static dll_t proto_nodes = {
-  .head = NULL,
-  .tail = NULL,
-};
+static dll_t proto_nodes = {NULL};
 
-proto_t proto = {
-  .cev = NULL,
-  .ceh = NULL,
-  .node = NULL,
-  .bdb = NULL,
-  .tag = -1,
-};
+proto_t proto = {NULL};
 
 int
 proto_set_node(char *sub)
@@ -82,6 +76,25 @@ proto_add_node(const char *node, struct epoll_event *ev)
 }
 
 int
+proto_db_init(const char *path)
+{
+  int err;
+
+  proto.bdb = malloc(sizeof(bdb_t));
+  err = bdb_db_open(path, proto.bdb);
+  if (err < 0) {
+    perror("bdb_db_open()");
+    return err;
+  }
+
+  proto.tag = bdb_tag_find("default", proto.bdb);
+  if (proto.tag < 0)
+    proto.tag = bdb_tag_add("default", proto.bdb);
+
+  return 0;
+}
+
+int
 proto_register(int epfd,
                const char *node,
                const char *service,
@@ -91,17 +104,6 @@ proto_register(int epfd,
   int sfd, err;
   dll_t *wq;
   struct epoll_event *ev;
-
-  proto.bdb = malloc(sizeof(bdb_t));
-  err = bdb_db_open("prc.bdb", proto.bdb);
-  if (err < 0) {
-    perror("bdb_db_open()");
-    return err;
-  }
-
-  proto.tag = bdb_tag_find("default", proto.bdb);
-  if (proto.tag < 0)
-    proto.tag = bdb_tag_add("default", proto.bdb);
 
   sfd = proto_connect(node, service);
   if (sfd < 0) {
@@ -239,7 +241,6 @@ int
 proto_parse_buf(struct epoll_event *ev,
                 char *buf, size_t len)
 {
-  int err;
   char *ptr;
 
   if (parse_buf == NULL) {
@@ -259,9 +260,6 @@ proto_parse_buf(struct epoll_event *ev,
     if (ptr && ptr + 1 < parse_bufi && *(ptr + 1) == '\n') {
 
       *ptr = '\0';
-      err = bdb_row_push(proto.tag, parse_buf, 1 + ptr - parse_buf, proto.bdb);
-      if (err < 0)
-        perror("bdb_row_push()");
 
       proto_parse_line(ev, parse_buf, ptr - parse_buf);
 
@@ -282,6 +280,7 @@ int proto_parse_line(struct epoll_event *ev,
 {
   event_handler_t *eh = (event_handler_t*)ev->data.ptr;
   char *tok, *bufi = buf, *prefix = NULL;
+  int err;
 
   *(buf + len) = '\0';
 
@@ -303,6 +302,10 @@ int proto_parse_line(struct epoll_event *ev,
       bufi = tok + 1;
       continue;
     }
+
+    err = bdb_row_push_str(proto.tag, proto.bdb, 3, prefix, bufi, tok + 1);
+    if (err < 0)
+      perror("proto_push_msg");
 
     handler_lookup(bufi, eh, prefix, tok + 1);
 

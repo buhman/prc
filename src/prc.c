@@ -65,6 +65,10 @@ main(int argc, char **argv)
 
     term_register(epfd);
 
+    err = proto_db_init("../prc.bdb");
+    if (err < 0)
+      exit(EXIT_FAILURE);
+
     err = handler_join_networks(epfd, cfg->networks);
     if (err < 0)
       exit(EXIT_FAILURE);

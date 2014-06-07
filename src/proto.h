@@ -55,3 +55,9 @@ proto_parse_buf(struct epoll_event *ev,
 int
 proto_parse_line(struct epoll_event *ev,
                  char *buf, size_t len);
+
+int
+proto_push_msg(char *prefix, char *command, char *params);
+
+int
+proto_db_init(const char *path);

@@ -235,6 +235,7 @@ handler_privmsg(event_handler_t *eh, char *prefix, char *buf)
   } /* ... */
 }
 
+/* this really doesn't belong here */
 int
 handler_join_networks(int epfd, dll_t *networks)
 {

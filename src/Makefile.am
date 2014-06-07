@@ -1,3 +1,6 @@
+EXTRA_DIST = \
+	version.h.in
+
 bin_PROGRAMS = prc
 
 prc_CFLAGS = \

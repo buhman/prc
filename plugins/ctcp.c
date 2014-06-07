@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "version.h"
 #include "prc.h"
 
 static prc_plugin_cmd_t ctcp_handler;
@@ -28,7 +29,7 @@ ctcp_handler(dll_t *wq, char *prefix, char *target, char *args)
 
   if (strcmp("VERSION", args) == 0)
     dll_enq(wq, prc_msg2("NOTICE", prc_prefix_parse(prefix, NICK),
-                         "\001VERSION Suck my cock\001", NULL));
+                         "\001VERSION prc v" PRC_VERSION "\001", NULL));
   else if (strcmp("FINGER", args) == 0)
     dll_enq(wq, prc_msg2("NOTICE", prc_prefix_parse(prefix, NICK),
                          "\001FINGER No thanks\001", NULL));

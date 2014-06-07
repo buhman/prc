@@ -12,9 +12,7 @@ AS_IF([! test -n "$VERSION"], [
          AC_MSG_ERROR([git-version failed])
 ])
 
-m4_define(bdb_version, `echo $VERSION | cut -d- -f1`)
-
-AC_SUBST([PRC_VERSION], prc_version)
+AC_SUBST([PRC_VERSION], $VERSION)
 
 AC_CANONICAL_HOST
 AC_DEFINE_UNQUOTED([CANONICAL_HOST], "$host", [Canonical host string.])
@@ -58,6 +56,7 @@ Makefile
 lib/Makefile
 src/Makefile
 plugins/Makefile
+lib/version.h
 ])
 
 AC_CONFIG_SUBDIRS([bdb])
