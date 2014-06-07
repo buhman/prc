@@ -8,7 +8,7 @@
 #include "prc.h"
 
 static prc_plugin_cmd_t dice_cmd;
-prc_tor_t prc_ctor;
+prc_plugin_ctor_t prc_ctor;
 
 static const char *d1[] = {
   "\u2609", /* ☉ */
@@ -154,7 +154,7 @@ dice_cmd(dll_t *wq, char *prefix, char* target, char *args)
 }
 
 int
-prc_ctor()
+prc_ctor(bdb_t *bdb)
 {
   srandom(time(NULL));
 

@@ -4,18 +4,19 @@
 
 #include "uthash.h"
 #include "dll.h"
+#include "bdb.h"
 
 #define MSG_SIZE 512
 
 /* prc_{c,d}tor: called on plugin_{,un}load() */
-typedef int (prc_plugin_init_t)();
+typedef int (prc_plugin_ctor_t)(bdb_t *bdb);
+
+typedef int (prc_plugin_dtor_t)(void);
 
 /* prc_sym: array of all $functions the plugin wants to register */
 typedef struct prc_plugin_sym prc_plugin_sym_t;
 
 typedef void (prc_plugin_cmd_t)(dll_t *wq, char *prefix, char *target, char *args);
-
-typedef int (prc_tor_t)(void);
 
 struct prc_plugin_sym {
   const char *key;

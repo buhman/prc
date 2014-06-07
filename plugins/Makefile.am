@@ -1,5 +1,6 @@
 AM_CFLAGS = \
-	-I$(top_srcdir)/lib
+	-I$(top_srcdir)/lib \
+	-I$(top_srcdir)/bdb/src
 
 AM_LIBADD = \
 	$(top_builddir)/lib/libprc.la
@@ -13,7 +14,8 @@ lib_LTLIBRARIES = \
 	libecho.la \
 	libmagic.la \
 	libdice.la \
-	libfullwidth.la
+	libfullwidth.la \
+	libquote.la
 
 libtime_la_SOURCES = \
 	time.c
@@ -41,3 +43,6 @@ libdice_la_SOURCES = \
 
 libfullwidth_la_SOURCES = \
 	fullwidth.c
+
+libquote_la_SOURCES = \
+	quote.c

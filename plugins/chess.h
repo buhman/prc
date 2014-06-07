@@ -29,5 +29,5 @@ enum position {
   Y2,
 };
 
-prc_tor_t prc_ctor;
-prc_tor_t prc_dtor;
+prc_plugin_ctor_t prc_ctor;
+prc_plugin_dtor_t prc_dtor;

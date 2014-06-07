@@ -74,11 +74,11 @@ plugin_load(char *name)
   }
 
   {
-    prc_plugin_init_t *reg_ctor;
+    prc_plugin_ctor_t *reg_ctor;
 
     *(void **)(&reg_ctor) = dlsym(handle, "prc_ctor");
     if ((error = dlerror()) == NULL) {
-      err = (*reg_ctor)();
+      err = (*reg_ctor)(proto.bdb);
       if (err < 0) {
         fprintf(stderr, "prc_ctor(): %d\n", err);
         return -1;
@@ -132,7 +132,7 @@ plugin_unload(char *name)
   }
 
   {
-    prc_plugin_init_t *reg_dtor;
+    prc_plugin_dtor_t *reg_dtor;
 
     *(void **)(&reg_dtor) = dlsym(item->handle, "prc_dtor");
     if ((error = dlerror()) == NULL) {

@@ -5,8 +5,8 @@
 static prc_plugin_cmd_t facts_find_handler;
 static prc_plugin_cmd_t facts_add_handler;
 
-prc_tor_t prc_ctor;
-prc_tor_t prc_dtor;
+prc_plugin_ctor_t prc_ctor;
+prc_plugin_dtor_t prc_dtor;
 
 typedef struct fact_ht fact_ht_t;
 

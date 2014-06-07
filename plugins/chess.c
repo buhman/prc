@@ -164,7 +164,7 @@ snap_cmd(dll_t *wq, char *prefix, char* target, char *args)
 }
 
 int
-prc_ctor()
+prc_ctor(bdb_t *bdb)
 {
   moves = calloc(1, sizeof(dll_t));
 
