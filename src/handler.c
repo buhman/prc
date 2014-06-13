@@ -220,6 +220,10 @@ handler_privmsg(event_handler_t *eh, char *prefix, char *buf)
 
     while ((pmsg = dll_pop(plugin_wq)) != NULL) {
 
+      /* targeting ourselves is probably invalid, let's change that */
+      if (strcmp(pmsg->target, eh->cfg->nick) == 0)
+        pmsg->target = prc_prefix_parse(prefix, NICK);
+
       if (redirect && *(redirect + 1) == '>')
         dll_enq(eh->wq, prc_msg3("%s %s :%s\r\n", pmsg->cmd, redirect + 2,
                               pmsg->buf));
