@@ -9,21 +9,21 @@
 
 #include "dll.h"
 #include "event.h"
+#include "prc.h"
 
-static int evfd;
+int evfd;
 
 static void
 handle_signal(int signum)
 {
   int err;
-  long long *buf = calloc(1, sizeof(long long));
-  *buf = 1 << signum;
+  char buf[8] = {0};
 
-  err = write(evfd, (char*)buf, sizeof(long long));
+  buf[PSIG_EVENT] = 1;
+
+  err = write(evfd, buf, 8);
   if (err < 0)
     perror("write(evfd)");
-
-  free(buf);
 }
 
 int

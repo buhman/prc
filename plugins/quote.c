@@ -110,7 +110,7 @@ quote_cmd(dll_t *wq, char *prefix, char* target, char *args)
 }
 
 int
-prc_ctor(bdb_t *b)
+prc_ctor(bdb_t *b, int evfd)
 {
   bdb = b;
 

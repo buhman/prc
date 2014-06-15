@@ -31,5 +31,8 @@ handler_lookup(char *command,
                char *prefix,
                char *sp);
 
+void
+handler_pump_plugin_wq(event_handler_t *eh, char *redirect);
+
 int
 handler_join_networks(int epfd, dll_t *networks);
