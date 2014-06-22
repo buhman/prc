@@ -105,7 +105,7 @@ main(int argc, char **argv)
         }
 
         if (evbuf[PSIG_PLUGIN]) {
-          fprintf(stderr, "sigplugin");
+          fprintf(stderr, "sigplugin\n");
           /* HACK: proto.cwq is an invalid assumption */
           handler_pump_plugin_wq(proto.ceh, NULL);
         }
@@ -145,17 +145,11 @@ main(int argc, char **argv)
         }
       }
 
-      if (!ehi->wq || !proto.ceh->wq) /* HACKS */
+      if ((!ehi->wq || !proto.ceh->wq) && ehi->fd != evfd) /* HACKS */
         continue;
 
       /* evi->events will only include the current events; HACK adds EPOLLIN */
-      if (ehi->wq->head && !(evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
-        //evi->events |= EPOLLOUT;
-        evi->events = EPOLLOUT | EPOLLIN;
-      else if (!ehi->wq->head && (evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
-        //evi->events &= ~EPOLLOUT;
-        evi->events = EPOLLIN;
-      else if ((ehi->fd == STDIN_FILENO || ehi->fd == evfd) && proto.ceh->wq->head) {
+      if ((ehi->fd == STDIN_FILENO || ehi->fd == evfd) && proto.ceh->wq->head) {
         proto.cev->events = EPOLLOUT | EPOLLIN;
         err = epoll_ctl(epfd, EPOLL_CTL_MOD, proto.ceh->fd, proto.cev);
         if (err < 0) {
@@ -163,8 +157,16 @@ main(int argc, char **argv)
           exit(EXIT_FAILURE);
         }
       }
+      else if (ehi->wq->head && !(evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
+        //evi->events |= EPOLLOUT;
+        evi->events = EPOLLOUT | EPOLLIN;
+      else if (!ehi->wq->head && (evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
+        //evi->events &= ~EPOLLOUT;
+        evi->events = EPOLLIN;
       else
         continue;
+
+      fprintf(stderr, "outer %d\n", ehi->fd);
 
       assert((evi->events & EPOLLOUT && ehi->fd != STDIN_FILENO) ||
              (evi->events & EPOLLOUT) == 0);

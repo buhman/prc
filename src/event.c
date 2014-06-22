@@ -38,6 +38,8 @@ event_init(int epfd)
     return evfd;
   }
 
+  fprintf(stderr, "evfd: %d\n", evfd);
+
   {
     act = calloc(1, sizeof(struct sigaction));
     act->sa_handler = handle_signal;

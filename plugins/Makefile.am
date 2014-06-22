@@ -15,34 +15,31 @@ lib_LTLIBRARIES = \
 	libmagic.la \
 	libdice.la \
 	libfullwidth.la \
-	libquote.la
+	libquote.la \
+	libsegfault.la \
+	libcourier.la
 
-libtime_la_SOURCES = \
-	time.c
+libtime_la_SOURCES = time.c
 
-libfacts_la_SOURCES = \
-	facts.c facts.h
+libfacts_la_SOURCES = facts.c facts.h
 
-libctcp_la_SOURCES = \
-	ctcp.c
+libctcp_la_SOURCES = ctcp.c
 
-libchess_la_SOURCES = \
-	chess.c chess.h
+libchess_la_SOURCES = chess.c chess.h
 
-librot13_la_SOURCES = \
-	rot13.c
+librot13_la_SOURCES = rot13.c
 
-libecho_la_SOURCES = \
-	echo.c
+libecho_la_SOURCES = echo.c
 
-libmagic_la_SOURCES = \
-	magic.c
+libmagic_la_SOURCES = magic.c
 
-libdice_la_SOURCES = \
-	dice.c
+libdice_la_SOURCES = dice.c
 
-libfullwidth_la_SOURCES = \
-	fullwidth.c
+libfullwidth_la_SOURCES = fullwidth.c
 
-libquote_la_SOURCES = \
-	quote.c
+libquote_la_SOURCES = quote.c
+
+libsegfault_la_SOURCES = segfault.c
+
+libcourier_la_SOURCES = courier.c
+libcourier_la_LIBADD = $(AM_LDADD) -lpthread
