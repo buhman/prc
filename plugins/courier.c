@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <sys/socket.h>
 #include <sys/epoll.h>
@@ -31,9 +32,18 @@ prc_plugin_sym_t prc_sym[] = {
 };
 
 static pthread_t main_thread;
-static int evd;
+static int thread_evd;
+static int main_evfd;
 static dll_t congregation = {NULL};
 static dll_t *pwq = NULL;
+
+typedef struct fdbuf fdbuf_t;
+
+struct fdbuf {
+  int fd;
+  unsigned char off;
+  char buf[256];
+};
 
 static int
 lbind(unsigned short port)
@@ -44,6 +54,13 @@ lbind(unsigned short port)
   sfd = socket(AF_INET6, SOCK_STREAM | SOCK_NONBLOCK, 0);
   if (sfd < 0) {
     perror("socket");
+    return sfd;
+  }
+
+  ret = 1;
+  ret = setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &ret, sizeof(int));
+  if (ret < 0) {
+    perror("SO_REUSEADDR");
     return sfd;
   }
 
@@ -70,7 +87,7 @@ lbind(unsigned short port)
 }
 
 static void
-pump_msg(int evfd, const char *buf)
+pump_msg(const char *buf)
 {
   int ret;
   dll_link_t *li;
@@ -87,11 +104,41 @@ pump_msg(int evfd, const char *buf)
 
   evbuf[PSIG_PLUGIN] = 1;
 
-  fprintf(stderr, "pump evfd: %d\n", evfd);
+  fprintf(stderr, "pump main_evfd: %d\n", main_evfd);
 
-  ret = write(evfd, evbuf, 8);
+  ret = write(main_evfd, evbuf, 8);
   if (ret < 0)
-    perror("write(evd)");
+    perror("write(thread_evd)");
+}
+
+static int
+eaccept(int efd, int sfd)
+{
+  struct epoll_event ev;
+  fdbuf_t *fb;
+  int ret, afd;
+
+  afd = accept4(sfd, NULL, NULL, SOCK_NONBLOCK);
+  if (afd < 0) {
+    perror("accept4");
+    return afd;
+  }
+
+  fb = malloc(sizeof(fdbuf_t));
+  fb->fd = afd;
+  fb->off = 0;
+
+  ev.events = EPOLLIN;
+  ev.data.ptr = fb;
+
+  ret = epoll_ctl(efd, EPOLL_CTL_ADD, afd, &ev);
+  if (ret < 0) {
+    perror("epoll_ctl");
+    free(fb);
+    return ret;
+  }
+
+  return 0;
 }
 
 static void *
@@ -99,6 +146,8 @@ courier_main(void *arg)
 {
   struct epoll_event evs[10], *evi;
   int sfd, ret, efd;
+  fdbuf_t *fb;
+  ssize_t rsize;
 
   sfd = lbind(9001);
 
@@ -118,8 +167,9 @@ courier_main(void *arg)
       return NULL;
     }
 
-    evs->data.fd = evd;
-    ret = epoll_ctl(efd, EPOLL_CTL_ADD, evd, evs);
+    evs->data.fd = thread_evd;
+    ret = epoll_ctl(efd, EPOLL_CTL_ADD, thread_evd, evs);
+
     if (ret < 0) {
       perror("epoll_ctl");
       return NULL;
@@ -137,21 +187,41 @@ courier_main(void *arg)
     for (evi = evs; evi < evs + ret; evi++) {
 
       if (evi->data.fd == sfd) {
-        ret = accept4(sfd, NULL, NULL, SOCK_NONBLOCK);
-        if (ret < 0) {
-          perror("accept");
-          return NULL;
-        }
 
-        fprintf(stderr, "accept\n");
+        ret = eaccept(efd, sfd);
+        if (ret < 0)
+          continue;
 
-        pump_msg((int)arg, "accept\n");
-
-        close(ret);
       }
-      else if (evi->data.fd == evd) {
-        fprintf(stderr, "evd");
+      else if (evi->data.fd == thread_evd) {
+
+        fprintf(stderr, "thread_evd");
         goto quit;
+      }
+      else {
+
+        fb = evi->data.ptr;
+
+        while (true) {
+          rsize = recv(fb->fd, fb->buf + fb->off, 254 - fb->off, 0);
+          if (rsize < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+              break;
+            perror("recv");
+          }
+          else if (rsize != 254 - fb->off && rsize != 0) {
+            fb->off += rsize;
+            continue;
+          }
+
+          close(fb->fd);
+          if (fb->off != 0) {
+            *(fb->buf + fb->off) = '\0';
+            pump_msg(fb->buf);
+          }
+          free(fb);
+          break;
+        }
       }
     }
   }
@@ -200,17 +270,19 @@ denounce_cmd(dll_t *wq, char *prefix, char* target, char *args)
 }
 
 int
-prc_ctor(bdb_t *b, int evfd)
+prc_ctor(bdb_t *b, int fd)
 {
   int ret;
 
-  evd = eventfd(0, EFD_NONBLOCK);
-  if (evd < 0) {
+  main_evfd = fd;
+
+  thread_evd = eventfd(0, EFD_NONBLOCK);
+  if (thread_evd < 0) {
     perror("eventfd");
-    return evd;
+    return thread_evd;
   }
 
-  ret = pthread_create(&main_thread, NULL, courier_main, (void*)evfd);
+  ret = pthread_create(&main_thread, NULL, courier_main, NULL);
   if (ret < 0)
     return ret;
 
@@ -225,7 +297,7 @@ prc_dtor(void)
 
   *buf = 1;
 
-  ret = write(evd, buf, 8);
+  ret = write(thread_evd, buf, 8);
   if (ret < 0) {
     perror("write");
     return ret;

@@ -212,21 +212,21 @@ handler_privmsg(event_handler_t *eh, char *prefix, char *buf)
     else
       plugin_switch(prefix, target, msg, msg + 1);
 
-    handler_pump_plugin_wq(eh, redirect);
+    handler_pump_plugin_wq(eh, redirect, prefix);
 
     tok = d2 + 1;
   } /* ... */
 }
 
 void
-handler_pump_plugin_wq(event_handler_t *eh, char *redirect)
+handler_pump_plugin_wq(event_handler_t *eh, char *redirect, char *prefix)
 {
   prc_plugin_msg_t *pmsg;
 
   while ((pmsg = dll_pop(plugin_wq)) != NULL) {
 
     /* targeting ourselves is probably invalid, let's change that */
-    if (strcmp(pmsg->target, eh->cfg->nick) == 0)
+    if (prefix && strcmp(pmsg->target, eh->cfg->nick) == 0)
       pmsg->target = prc_prefix_parse(prefix, NICK);
 
     if (redirect && *(redirect + 1) == '>')

@@ -107,7 +107,7 @@ main(int argc, char **argv)
         if (evbuf[PSIG_PLUGIN]) {
           fprintf(stderr, "sigplugin\n");
           /* HACK: proto.cwq is an invalid assumption */
-          handler_pump_plugin_wq(proto.ceh, NULL);
+          handler_pump_plugin_wq(proto.ceh, NULL, NULL);
         }
       }
       else {

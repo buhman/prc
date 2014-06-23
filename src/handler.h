@@ -32,7 +32,7 @@ handler_lookup(char *command,
                char *sp);
 
 void
-handler_pump_plugin_wq(event_handler_t *eh, char *redirect);
+handler_pump_plugin_wq(event_handler_t *eh, char *redirect, char *prefix);
 
 int
 handler_join_networks(int epfd, dll_t *networks);
