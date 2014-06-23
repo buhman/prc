@@ -212,32 +212,37 @@ handler_privmsg(event_handler_t *eh, char *prefix, char *buf)
     else
       plugin_switch(prefix, target, msg, msg + 1);
 
+    handler_pump_plugin_wq(eh, redirect);
+
     tok = d2 + 1;
   } /* ... */
-
-  {
-    prc_plugin_msg_t *pmsg;
-
-    while ((pmsg = dll_pop(plugin_wq)) != NULL) {
-
-      /* targeting ourselves is probably invalid, let's change that */
-      if (strcmp(pmsg->target, eh->cfg->nick) == 0)
-        pmsg->target = prc_prefix_parse(prefix, NICK);
-
-      if (redirect && *(redirect + 1) == '>')
-        dll_enq(eh->wq, prc_msg3("%s %s :%s\r\n", pmsg->cmd, redirect + 2,
-                              pmsg->buf));
-      else if (redirect)
-        dll_enq(eh->wq, prc_msg3("%s %s :%s: %s\r\n", pmsg->cmd, pmsg->target,
-                             redirect + 1, pmsg->buf));
-      else
-        dll_enq(eh->wq, prc_msg(pmsg->cmd, pmsg->target, ":", pmsg->buf, NULL));
-
-      free(pmsg->buf);
-      free(pmsg);
-    }
-  } /* ... */
 }
+
+void
+handler_pump_plugin_wq(event_handler_t *eh, char *redirect)
+{
+  prc_plugin_msg_t *pmsg;
+
+  while ((pmsg = dll_pop(plugin_wq)) != NULL) {
+
+    /* targeting ourselves is probably invalid, let's change that */
+    if (strcmp(pmsg->target, eh->cfg->nick) == 0)
+      pmsg->target = prc_prefix_parse(prefix, NICK);
+
+    if (redirect && *(redirect + 1) == '>')
+      dll_enq(eh->wq, prc_msg3("%s %s :%s\r\n", pmsg->cmd, redirect + 2,
+                               pmsg->buf));
+    else if (redirect)
+      dll_enq(eh->wq, prc_msg3("%s %s :%s: %s\r\n", pmsg->cmd, pmsg->target,
+                               redirect + 1, pmsg->buf));
+    else
+      dll_enq(eh->wq, prc_msg(pmsg->cmd, pmsg->target, ":", pmsg->buf, NULL));
+
+    free(pmsg->buf);
+    free(pmsg);
+  }
+}
+
 
 /* this really doesn't belong here */
 int

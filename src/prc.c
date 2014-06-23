@@ -21,10 +21,11 @@
 int
 main(int argc, char **argv)
 {
-  int epfd, evfd, err, events, terminate = 1;
+  int epfd, err, events, terminate = 1;
   struct epoll_event evs[MAXEVENT], *evi;
   event_handler_t *ehi;
   cfg_t *cfg;
+  char evbuf[8];
 
   {
     cfg = cfg_create();
@@ -91,50 +92,64 @@ main(int argc, char **argv)
       ehi = (event_handler_t*)evi->data.ptr;
 
       if (ehi->fd == evfd) {
-        // FIXME
-        terminate--;
-        continue;
-      }
 
-      if (evi->events & EPOLLIN) {
-        //fprintf(stderr, "evir fd: %d\n", ehi->fd);
-
-        err = (ehi->rf)(evi);
-        if (err < 0)
+        err = read(evfd, evbuf, 8);
+        if (err < 0) {
+          perror("read(evfd)");
           exit(EXIT_FAILURE);
+        }
 
-        // remote disconnect
-        if (err == 0) {
-          assert(!ehi->wq->head);
-          free(ehi->wq);
-          fprintf(stderr, "event_del, %p\n", (void*)evi);
-          err = event_del(epfd, evi);
-          if (err < 0) {
-            perror("event_del()");
-            exit(EXIT_FAILURE);
-          }
+        if (evbuf[PSIG_EVENT]) {
+          terminate--;
           continue;
+        }
+
+        if (evbuf[PSIG_PLUGIN]) {
+          fprintf(stderr, "sigplugin\n");
+          /* HACK: proto.cwq is an invalid assumption */
+          handler_pump_plugin_wq(proto.ceh, NULL);
+        }
+      }
+      else {
+
+        if (evi->events & EPOLLIN) {
+          //fprintf(stderr, "evir fd: %d\n", ehi->fd);
+
+          err = (ehi->rf)(evi);
+          if (err < 0)
+            exit(EXIT_FAILURE);
+
+          // remote disconnect
+          if (err == 0) {
+            {
+              char *buf;
+              while ((buf = dll_pop(ehi->wq)) != NULL)
+                free(buf);
+            }
+            free(ehi->wq);
+            fprintf(stderr, "event_del, %p\n", (void*)evi);
+            err = event_del(epfd, evi);
+            if (err < 0) {
+              perror("event_del()");
+              exit(EXIT_FAILURE);
+            }
+            continue;
+          }
+        }
+
+        if (evi->events & EPOLLOUT) {
+          //fprintf(stderr, "eviw fd: %d\n", ehi->fd);
+          err = (ehi->wf)(evi);
+          if (err < 0)
+            exit(EXIT_FAILURE);
         }
       }
 
-      if (evi->events & EPOLLOUT) {
-        //fprintf(stderr, "eviw fd: %d\n", ehi->fd);
-        err = (ehi->wf)(evi);
-        if (err < 0)
-          exit(EXIT_FAILURE);
-      }
-
-      if (!ehi->wq || !proto.ceh->wq) /* HACKS */
+      if ((!ehi->wq || !proto.ceh->wq) && ehi->fd != evfd) /* HACKS */
         continue;
 
       /* evi->events will only include the current events; HACK adds EPOLLIN */
-      if (ehi->wq->head && !(evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
-        //evi->events |= EPOLLOUT;
-        evi->events = EPOLLOUT | EPOLLIN;
-      else if (!ehi->wq->head && (evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
-        //evi->events &= ~EPOLLOUT;
-        evi->events = EPOLLIN;
-      else if (ehi->fd == STDIN_FILENO && proto.ceh->wq->head) {
+      if ((ehi->fd == STDIN_FILENO || ehi->fd == evfd) && proto.ceh->wq->head) {
         proto.cev->events = EPOLLOUT | EPOLLIN;
         err = epoll_ctl(epfd, EPOLL_CTL_MOD, proto.ceh->fd, proto.cev);
         if (err < 0) {
@@ -142,16 +157,26 @@ main(int argc, char **argv)
           exit(EXIT_FAILURE);
         }
       }
+      else if (ehi->wq->head && !(evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
+        //evi->events |= EPOLLOUT;
+        evi->events = EPOLLOUT | EPOLLIN;
+      else if (!ehi->wq->head && (evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
+        //evi->events &= ~EPOLLOUT;
+        evi->events = EPOLLIN;
       else
         continue;
+
+      fprintf(stderr, "outer %d\n", ehi->fd);
 
       assert((evi->events & EPOLLOUT && ehi->fd != STDIN_FILENO) ||
              (evi->events & EPOLLOUT) == 0);
 
-      err = epoll_ctl(epfd, EPOLL_CTL_MOD, ehi->fd, evi);
-      if (err < 0) {
-        perror("epoll_ctl()");
-        exit(EXIT_FAILURE);
+      if (ehi->fd != STDIN_FILENO || ehi->fd != evfd) {
+        err = epoll_ctl(epfd, EPOLL_CTL_MOD, ehi->fd, evi);
+        if (err < 0) {
+          perror("epoll_ctl()");
+          exit(EXIT_FAILURE);
+        }
       }
     }
 

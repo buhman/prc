@@ -78,7 +78,7 @@ plugin_load(char *name)
 
     *(void **)(&reg_ctor) = dlsym(handle, "prc_ctor");
     if ((error = dlerror()) == NULL) {
-      err = (*reg_ctor)(proto.bdb);
+      err = (*reg_ctor)(proto.bdb, evfd);
       if (err < 0) {
         fprintf(stderr, "prc_ctor(): %d\n", err);
         return -1;

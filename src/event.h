@@ -33,3 +33,5 @@ event_add(int epfd,
 int
 event_del(int epfd,
           struct epoll_event *ev);
+
+extern int evfd;

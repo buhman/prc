@@ -154,7 +154,7 @@ dice_cmd(dll_t *wq, char *prefix, char* target, char *args)
 }
 
 int
-prc_ctor(bdb_t *bdb)
+prc_ctor(bdb_t *bdb, int evfd)
 {
   srandom(time(NULL));
 

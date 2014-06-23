@@ -9,7 +9,7 @@
 #define MSG_SIZE 512
 
 /* prc_{c,d}tor: called on plugin_{,un}load() */
-typedef int (prc_plugin_ctor_t)(bdb_t *bdb);
+typedef int (prc_plugin_ctor_t)(bdb_t *bdb, int evfd);
 
 typedef int (prc_plugin_dtor_t)(void);
 
@@ -43,6 +43,11 @@ enum prefix_cp {
   NICK = 0,
   USER,
   HOST
+};
+
+enum prc_signal {
+  PSIG_EVENT = 0,
+  PSIG_PLUGIN,
 };
 
 char*

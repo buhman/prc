@@ -210,7 +210,7 @@ facts_destroy_ht()
 }
 
 int
-prc_ctor(bdb_t *bdb)
+prc_ctor(bdb_t *bdb, int evfd)
 {
   int err;
 
