@@ -10,6 +10,16 @@ A plugin that {segfaults,does invalid/evil things with memory,etc}
 also causes prc itself to self-destruct. Instead plugins should run in
 their own process and do IPC with prc.
 
+### Plugin API refactor
+
+The plugin API needs to be reworked completely--in particular, plugins
+should be able to be explicit about which network a message should go
+to rather than prc making these assumptions, and perhaps also a more
+sane method for target redirection.
+
+Most of this should hopefully happen naturally during the
+sandbox/IPC refactor.
+
 ### Big reload
 
 Why stop at reloading plugins? prc could simply hand off socket fds
@@ -91,31 +101,11 @@ pieces as individual pieces; this allows:
 
 * save/restore boards
 
-### libgitcd
-
-In its own special thread, this would wait for a related git
-post-commit hook to inform it of new commits; it would then retrieve
-said commit message, and regurgitate to the channel.
-
-This would involve an epoll'ed accept()--netcat or similar would be
-used in the git post-commit hook, and the initial trivial
-implementation would simply involve closing the connection
-immediately. libgit2 would then be used to read the HEAD commit.
-
-Because libgitcd would be writing to the plugin queue independently of
-the mainloop, the mainloop also needs to be informed of this.
-
-The plugin architecture I think could be updated to provide the
-eventfd to the constructor of each plugin. bit-shifting is already
-used to encode up to 64 values--a new value for "do the
-plugin-write-queue thing" would simply need to be created; perhaps an
-enum for these possible events (and their names) should also be
-created.
-
-dll also would need to be updated to become threadsafe (should be
-trivial).
-
 ### libsteal
 
 Interpret '!' commands (directed at phrik), and add whatever phrik
 replies with to the factdb.
+
+### libcalc
+
+A (RPN?) calculator.
