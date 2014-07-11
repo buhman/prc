@@ -19,6 +19,13 @@ static const char *d2[] = {
   "\u2687", /* ⚇ */
 };
 
+static const char *d4[] = {
+  "\u2190", /* ← */
+  "\u2191", /* ↑ */
+  "\u2192", /* → */
+  "\u2193", /* ↓ */
+};
+
 static const char *d6[] = {
   "\u2680", /* ⚀ */
   "\u2681", /* ⚁ */
@@ -101,7 +108,7 @@ dice_cmd(dll_t *wq, char *prefix, char* target, char *args)
     num = 1;
   else {
     tok = strchr(args, ' ');
-    if (tok) {
+    if (tok && *(tok + 1) != '\0') {
       *tok = '\0';
       nface = strtoll(tok + 1, &tok, 10);
       if (*tok != '\0' || nface > 50) {
@@ -121,6 +128,8 @@ dice_cmd(dll_t *wq, char *prefix, char* target, char *args)
     faces = d1;
   else if (nface == 2)
     faces = d2;
+  else if (nface == 4)
+    faces = d4;
   else if (nface == 6)
     faces = d6;
   else
