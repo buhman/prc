@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -96,20 +100,14 @@ proto_db_init(const char *path)
 
 int
 proto_register(int epfd,
+               int sfd,
                const char *node,
-               const char *service,
                cfg_net_t *cfg,
                dll_t **owq)
 {
-  int sfd, err;
+  int err;
   dll_t *wq;
   struct epoll_event *ev;
-
-  sfd = proto_connect(node, service);
-  if (sfd < 0) {
-    perror("proto_connect()");
-    return sfd;
-  }
 
   wq = calloc(1, sizeof(dll_t));
   ev = malloc(sizeof(struct epoll_event));
@@ -127,9 +125,10 @@ proto_register(int epfd,
 
   proto_add_node(node, proto.cev);
 
-  *owq = wq;
+  if (owq)
+    *owq = wq;
 
-  return 0;
+  return sfd;
 }
 
 int

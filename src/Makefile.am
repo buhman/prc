@@ -19,6 +19,9 @@ prc_SOURCES = \
 	buf.c buf.h \
 	plugin.c plugin.h \
 	cfg.c cfg.h \
+	worker.c worker.h \
+	controller.c controller.h \
+	network.c network.h \
 	prc.c
 
 prc_LDADD = \

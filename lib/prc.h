@@ -1,12 +1,16 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include "uthash.h"
 #include "dll.h"
 #include "bdb.h"
 
 #define MSG_SIZE 512
+
+#define herror(msg, ret)                        \
+  do { perror(msg); return ret; } while (0)
 
 /* prc_{c,d}tor: called on plugin_{,un}load() */
 typedef int (prc_plugin_ctor_t)(bdb_t *bdb, int evfd);

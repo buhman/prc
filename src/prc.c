@@ -1,204 +1,51 @@
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <unistd.h>
-#include <errno.h>
-#include <assert.h>
+#include <stdbool.h>
 
 #include <sys/epoll.h>
-
-#include "term.h"
-#include "proto.h"
-#include "event.h"
-#include "handler.h"
-#include "cfg.h"
-#include "plugin.h"
+#include <sys/socket.h>
+#include <sys/un.h>
 
 #include "prc.h"
-
-#define MAXEVENT 5
+#include "event.h"
+#include "controller.h"
+#include "worker.h"
 
 int
-main(int argc, char **argv)
+main(int argc, char *argv[])
 {
-  int epfd, err, events, terminate = 1;
-  struct epoll_event evs[MAXEVENT], *evi;
-  event_handler_t *ehi;
-  cfg_t *cfg;
-  char evbuf[8];
+  int ret, sfds[2], fds[256], nfds = 0;
 
-  {
-    cfg = cfg_create();
+  pid_t pid;
 
-    err = cfg_open("../prc.cfg", cfg->file);
-    if (err < 0) {
-      perror("cfg_open()");
-      exit(EXIT_FAILURE);
+  while (true) {
+
+    ret = socketpair(AF_UNIX, SOCK_STREAM, 0, sfds);
+    if (ret < 0)
+      herror("socketpair()", ret);
+
+    pid = fork();
+    if (pid < 0)
+      herror("fork()", pid);
+
+    fprintf(stderr, "SOCKPAIR; c: %d w: %d\n\n", sfds[0], sfds[1]);
+
+    if (pid == 0) {
+      close(sfds[0]);
+      return worker_main(sfds[1], fds, nfds);
     }
 
-    err = cfg_parse(cfg);
-    if (err < 0)
-      exit(EXIT_FAILURE);
-  } /* ... */
+    close(sfds[1]);
+    ret = controller_main(sfds[0], fds, &nfds);
+    if (ret < 0)
+      return ret;
 
-  {
-    epfd = epoll_create1(EPOLL_CLOEXEC);
-    if (epfd < 0) {
-      perror("epoll_create1()");
-      exit(EXIT_FAILURE);
-    }
-  } /* ... */
+    close(sfds[0]);
 
-  {
-    evfd = event_init(epfd);
-    if (evfd < 0) {
-      perror("event_init()");
-      exit(EXIT_FAILURE);
-    }
+  } /* .. */
 
-    handler_init();
-  }
-
-  {
-    err = plugin_cfg(cfg->plugins);
-    if (err < 0)
-      exit(EXIT_FAILURE);
-
-    term_register(epfd);
-
-    err = proto_db_init("../prc.bdb");
-    if (err < 0)
-      exit(EXIT_FAILURE);
-
-    err = handler_join_networks(epfd, cfg->networks);
-    if (err < 0)
-      exit(EXIT_FAILURE);
-  }
-
-  while (terminate > 0) {
-    events = epoll_wait(epfd, evs, MAXEVENT, -1);
-    if (events < 0) {
-      switch (errno) {
-      case EINTR:
-        break;
-      default:
-        perror("epoll_wait()");
-        exit(EXIT_FAILURE);
-      }
-    }
-
-    for (evi = evs; evi < evs + events; evi++) {
-
-      ehi = (event_handler_t*)evi->data.ptr;
-
-      if (ehi->fd == evfd) {
-
-        err = read(evfd, evbuf, 8);
-        if (err < 0) {
-          perror("read(evfd)");
-          exit(EXIT_FAILURE);
-        }
-
-        if (evbuf[PSIG_EVENT]) {
-          terminate--;
-          continue;
-        }
-
-        if (evbuf[PSIG_PLUGIN]) {
-          fprintf(stderr, "sigplugin\n");
-          /* HACK: proto.cwq is an invalid assumption */
-          handler_pump_plugin_wq(proto.ceh, NULL, NULL);
-        }
-      }
-      else {
-
-        if (evi->events & EPOLLIN) {
-          //fprintf(stderr, "evir fd: %d\n", ehi->fd);
-
-          err = (ehi->rf)(evi);
-          if (err < 0)
-            exit(EXIT_FAILURE);
-
-          // remote disconnect
-          if (err == 0) {
-            {
-              char *buf;
-              while ((buf = dll_pop(ehi->wq)) != NULL)
-                free(buf);
-            }
-            free(ehi->wq);
-            fprintf(stderr, "event_del, %p\n", (void*)evi);
-            err = event_del(epfd, evi);
-            if (err < 0) {
-              perror("event_del()");
-              exit(EXIT_FAILURE);
-            }
-            continue;
-          }
-        }
-
-        if (evi->events & EPOLLOUT) {
-          //fprintf(stderr, "eviw fd: %d\n", ehi->fd);
-          err = (ehi->wf)(evi);
-          if (err < 0)
-            exit(EXIT_FAILURE);
-        }
-      }
-
-      if ((!ehi->wq || !proto.ceh->wq) && ehi->fd != evfd) /* HACKS */
-        continue;
-
-      /* evi->events will only include the current events; HACK adds EPOLLIN */
-      if ((ehi->fd == STDIN_FILENO || ehi->fd == evfd) && proto.ceh->wq->head) {
-        proto.cev->events = EPOLLOUT | EPOLLIN;
-        err = epoll_ctl(epfd, EPOLL_CTL_MOD, proto.ceh->fd, proto.cev);
-        if (err < 0) {
-          perror("epoll_ctl()");
-          exit(EXIT_FAILURE);
-        }
-      }
-      else if (ehi->wq->head && !(evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
-        //evi->events |= EPOLLOUT;
-        evi->events = EPOLLOUT | EPOLLIN;
-      else if (!ehi->wq->head && (evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
-        //evi->events &= ~EPOLLOUT;
-        evi->events = EPOLLIN;
-      else
-        continue;
-
-      fprintf(stderr, "outer %d\n", ehi->fd);
-
-      assert((evi->events & EPOLLOUT && ehi->fd != STDIN_FILENO) ||
-             (evi->events & EPOLLOUT) == 0);
-
-      if (ehi->fd != STDIN_FILENO || ehi->fd != evfd) {
-        err = epoll_ctl(epfd, EPOLL_CTL_MOD, ehi->fd, evi);
-        if (err < 0) {
-          perror("epoll_ctl()");
-          exit(EXIT_FAILURE);
-        }
-      }
-    }
-
-    err = term_stdout(epfd);
-    if (err < 0)
-      exit(EXIT_FAILURE);
-  }
-
-  {
-    handler_free();
-
-    close(epfd);
-    close(evfd);
-
-    err = cfg_close(cfg->file);
-    if (err < 0) {
-      perror("cfg_close()");
-      exit(EXIT_FAILURE);
-    }
-
-    cfg_free(cfg);
-  } /* ... */
-
-  return EXIT_SUCCESS;
+  return 0;
 }

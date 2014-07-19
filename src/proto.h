@@ -33,8 +33,8 @@ proto_set_node(char *sub);
 
 int
 proto_register(int epfd,
+               int sfd,
                const char *node,
-               const char *service,
                cfg_net_t *cfg,
                dll_t **owq);
 
