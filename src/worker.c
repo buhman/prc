@@ -27,183 +27,183 @@
 #define MAXEVENT 10
 
 int
-worker_main(int cfd, int fds[], int nfds)
+worker_evfd()
 {
-  int epfd, err, events, terminate = 1;
-  struct epoll_event evs[MAXEVENT], *evi;
-  event_handler_t *ehi;
-  cfg_t *cfg;
+  int ret;
   char evbuf[8];
 
-  epfd = epoll_create1(EPOLL_CLOEXEC);
-  if (epfd < 0)
-    herror("epoll_create1()", epfd);
+  ret = read(evfd, evbuf, 8);
+  if (ret < 0)
+    herror("read(evfd)", ret);
 
-  evfd = event_ev_init(epfd);
-  if (evfd < 0)
-    herror("event_ev_init()", evfd);
+  if (evbuf[PSIG_EVENT])
+    return 1;
 
-  handler_init();
+  if (evbuf[PSIG_PLUGIN]) {
+    fprintf(stderr, "sigplugin\n");
+    /* HACK: proto.cwq is an invalid assumption */
+    handler_pump_plugin_wq(proto.ceh, NULL, NULL);
+  }
 
-  {
-    cfg = cfg_create();
+  return 0;
+}
 
-    err = cfg_open("../prc.cfg", cfg->file);
-    if (err < 0) {
-      perror("cfg_open()");
-      return err;
-    }
+int
+worker_event(int epfd, struct epoll_event* evi, event_handler_t* ehi)
+{
+  int ret;
+  char *buf;
 
-    err = cfg_parse(cfg);
-    if (err < 0)
-      return err;
-  } /* ... */
+  if (evi->events & EPOLLIN) {
 
-  {
-    err = plugin_cfg(cfg->plugins);
-    if (err < 0)
-      return err;
+    ret = (ehi->rf)(evi);
+    if (ret < 0)
+      herror("ehi->rf", ret);
 
-    term_register(epfd);
+    /* remote disconnect */
+    if (ret == 0) {
 
-    err = proto_db_init("../prc.bdb");
-    if (err < 0)
-      return err;
+      while ((buf = dll_pop(ehi->wq)) != NULL)
+        free(buf);
+      free(ehi->wq);
 
-    if (nfds > 0) {
-      err = network_join_fds(epfd, fds, nfds);
-      if (err < 0)
-        return err;
-    }
-    else {
-      err = network_join_cfg(epfd, cfd, cfg->networks);
-      if (err < 0)
-        return err;
+      fprintf(stderr, "event_del, %p\n", (void*)evi);
+
+      ret = event_del(epfd, evi);
+      if (ret < 0)
+        herror("event_del", ret);
+
+      /* TODO: need to inform controller of disconnect */
     }
   }
 
-  while (terminate > 0) {
+  if (evi->events & EPOLLOUT) {
+
+    ret = (ehi->wf)(evi);
+    if (ret < 0)
+      herror("ehi->wf", ret);
+  }
+
+  return 0;
+}
+
+int
+worker_main(int cfd, int fds[], int nfds)
+{
+  int epfd, ret, events;
+  struct epoll_event evs[MAXEVENT], *evi;
+  event_handler_t *ehi;
+  cfg_t *cfg;
+
+  {
+    epfd = epoll_create1(EPOLL_CLOEXEC);
+    if (epfd < 0)
+      herror("epoll_create1", epfd);
+
+    evfd = event_ev_init(epfd);
+    if (evfd < 0)
+      herror("event_ev_init", evfd);
+
+    handler_init();
+
+    cfg = cfg_create();
+
+    ret = cfg_open("../prc.cfg", cfg->file);
+    if (ret < 0)
+      herror("cfg_open", ret);
+
+    ret = cfg_parse(cfg);
+    if (ret < 0)
+      herror("cfg_parse", ret);
+  } /* ... */
+
+  {
+    ret = plugin_cfg(cfg->plugins);
+    if (ret < 0)
+      herror("plugin_cfg", ret);
+
+    ret = term_register(epfd);
+    if (ret < 0)
+      herror("term_register", ret);
+
+    ret = proto_db_init("../prc.bdb");
+    if (ret < 0)
+      herror("proto_db_init", ret);
+
+    if (nfds > 0) {
+      ret = network_join_fds(epfd, fds, nfds);
+      if (ret < 0)
+        herror("network_join_fds", ret);
+    }
+    else {
+      ret = network_join_cfg(epfd, cfd, cfg->networks);
+      if (ret < 0)
+        herror("network_join_cfg", ret);
+    }
+  }
+
+  while (true) {
     events = epoll_wait(epfd, evs, MAXEVENT, -1);
     if (events < 0) {
       switch (errno) {
       case EINTR:
         break;
       default:
-        perror("epoll_wait()");
-        return err;
+        herror("epoll_wait", events);
       }
     }
 
     for (evi = evs; evi < evs + events; evi++) {
 
-      ehi = (event_handler_t*)evi->data.ptr;
+      ehi = evi->data.ptr;
 
       if (ehi->fd == evfd) {
-
-        err = read(evfd, evbuf, 8);
-        if (err < 0) {
-          perror("read(evfd)");
-          return err;
-        }
-
-        if (evbuf[PSIG_EVENT]) {
-          terminate--;
-          continue;
-        }
-
-        if (evbuf[PSIG_PLUGIN]) {
-          fprintf(stderr, "sigplugin\n");
-          /* HACK: proto.cwq is an invalid assumption */
-          handler_pump_plugin_wq(proto.ceh, NULL, NULL);
-        }
+        ret = worker_evfd();
+        if (ret < 0)
+          herror("worker_evfd", ret);
+        else if (ret > 0)
+          worker_quit("psig_event", 0);
+        /* TODO: we need to help the controller understand normal
+           termination */
       }
       else {
-
-        if (evi->events & EPOLLIN) {
-          //fprintf(stderr, "evir fd: %d\n", ehi->fd);
-
-          err = (ehi->rf)(evi);
-          if (err < 0)
-            return err;
-
-          // remote disconnect
-          if (err == 0) {
-            {
-              char *buf;
-              while ((buf = dll_pop(ehi->wq)) != NULL)
-                free(buf);
-            }
-            free(ehi->wq);
-            fprintf(stderr, "event_del, %p\n", (void*)evi);
-            err = event_del(epfd, evi);
-            if (err < 0) {
-              perror("event_del()");
-              return err;
-            }
-            continue;
-          }
-        }
-
-        if (evi->events & EPOLLOUT) {
-          //fprintf(stderr, "eviw fd: %d\n", ehi->fd);
-          err = (ehi->wf)(evi);
-          if (err < 0)
-            return err;
-        }
+        ret = worker_event(epfd, evi, ehi);
+        if (ret < 0)
+          herror("worker_evfd", ret);
       }
 
-      if ((!ehi->wq || !proto.ceh->wq) && ehi->fd != evfd) /* HACKS */
-        continue;
-
-      /* evi->events will only include the current events; HACK adds EPOLLIN */
-      if ((ehi->fd == STDIN_FILENO || ehi->fd == evfd) && proto.ceh->wq->head) {
-        proto.cev->events = EPOLLOUT | EPOLLIN;
-        err = epoll_ctl(epfd, EPOLL_CTL_MOD, proto.ceh->fd, proto.cev);
-        if (err < 0) {
-          perror("epoll_ctl()");
-          return err;
-        }
-      }
-      else if (ehi->wq->head && !(evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
-        //evi->events |= EPOLLOUT;
-        evi->events = EPOLLOUT | EPOLLIN;
-      else if (!ehi->wq->head && (evi->events & EPOLLOUT) && ehi->fd != STDIN_FILENO)
-        //evi->events &= ~EPOLLOUT;
-        evi->events = EPOLLIN;
+      if (ehi->fd == STDIN_FILENO || ehi->fd == evfd)
+        if (proto.ceh->wq && proto.ceh->wq->head)
+          proto.cev->events = EPOLLOUT | EPOLLIN;
+        else
+          continue;
+      else if (ehi->wq)
+        if (ehi->wq->head && !(evi->events & EPOLLOUT))
+          evi->events = EPOLLOUT | EPOLLIN;
+        else if (!ehi->wq->head && (evi->events & EPOLLOUT))
+          evi->events = EPOLLIN;
+        else
+          continue;
       else
         continue;
 
       assert((evi->events & EPOLLOUT && ehi->fd != STDIN_FILENO) ||
              (evi->events & EPOLLOUT) == 0);
 
-      if (ehi->fd != STDIN_FILENO || ehi->fd != evfd) {
-        err = epoll_ctl(epfd, EPOLL_CTL_MOD, ehi->fd, evi);
-        if (err < 0) {
-          perror("epoll_ctl()");
-          return err;
-        }
+      if (ehi->fd == STDIN_FILENO || ehi->fd == evfd) {
+        ret = epoll_ctl(epfd, EPOLL_CTL_MOD, proto.ceh->fd, proto.cev);
+        if (ret < 0)
+          herror("epoll_ctl()", ret);
+      }
+      else {
+        ret = epoll_ctl(epfd, EPOLL_CTL_MOD, ehi->fd, evi);
+        if (ret < 0)
+          herror("epoll_ctl()", ret);
       }
     }
 
-    err = term_stdout(epfd);
-    if (err < 0)
-      return err;
+    ret = term_stdout(epfd);
+    if (ret < 0)
+      herror("term_stdout", ret);
   }
-
-  {
-    handler_free();
-
-    close(epfd);
-    close(evfd);
-
-    err = cfg_close(cfg->file);
-    if (err < 0) {
-      perror("cfg_close()");
-      return err;
-    }
-
-    cfg_free(cfg);
-  } /* ... */
-
-  return 0;
 }
