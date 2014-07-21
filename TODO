@@ -20,14 +20,6 @@ sane method for target redirection.
 Most of this should hopefully happen naturally during the
 sandbox/IPC refactor.
 
-### Big reload
-
-Why stop at reloading plugins? prc could simply hand off socket fds
-to a new instance of prc--most of the startup process involves
-stateful server-side cruft, so this would effectively reduce full
-restart times to ~0 (compared to the current ~5+ second startup
-sequence).
-
 ### buffer and tag mappings
 
 Incoming protocol messages should be tagged based on match -> tag
