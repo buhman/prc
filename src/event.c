@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -6,6 +10,7 @@
 
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
+#include <sys/socket.h>
 
 #include "dll.h"
 #include "event.h"
@@ -27,7 +32,7 @@ handle_signal(int signum)
 }
 
 int
-event_init(int epfd)
+event_ev_init(int epfd)
 {
   int err;
   struct sigaction *act;
@@ -123,6 +128,54 @@ event_del(int epfd,
 
   free(eh);
   ev->data.ptr = NULL;
+
+  return 0;
+}
+
+int
+event_bind(int domain, int efd, struct sockaddr *sa)
+{
+  struct epoll_event ev;
+  int sfd, ret;
+
+  sfd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
+  if (sfd < 0)
+    herror("socket()", sfd);
+
+  ret = bind(sfd, sa, sizeof(*sa));
+  if (ret < 0)
+    herror("bind()", ret);
+
+  ret = listen(sfd, 1024);
+  if (ret < 0)
+    herror("listen()", ret);
+
+  ev.events = EPOLLIN;
+  ev.data.fd = sfd;
+
+  ret = epoll_ctl(efd, EPOLL_CTL_ADD, sfd, &ev);
+  if (ret < 0)
+    herror("epoll_ctl", ret);
+
+  return sfd;
+}
+
+int
+event_accept(int efd, int sfd)
+{
+  struct epoll_event ev;
+  int ret, afd;
+
+  afd = accept4(sfd, NULL, NULL, SOCK_NONBLOCK);
+  if (afd < 0)
+    herror("accept4", afd);
+
+  ev.events = EPOLLIN;
+  ev.data.fd = efd;
+
+  ret = epoll_ctl(efd, EPOLL_CTL_ADD, afd, &ev);
+  if (ret < 0)
+    herror("epoll_ctl", ret);
 
   return 0;
 }

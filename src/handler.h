@@ -35,4 +35,4 @@ void
 handler_pump_plugin_wq(event_handler_t *eh, char *redirect, char *prefix);
 
 int
-handler_join_networks(int epfd, dll_t *networks);
+handler_join_networks(int epfd, int cfd, dll_t *networks);

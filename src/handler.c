@@ -102,7 +102,7 @@ handler_capend(event_handler_t *eh, char *prefix, char *buf)
 static void
 handler_ping(event_handler_t *eh, char *prefix, char *buf)
 {
-  dll_enq(eh->wq, prc_msg3("PONG %s\r\n", (char*)eh->cfg->nick));
+  dll_enq(eh->wq, prc_msg3("PONG\r\n"));
 }
 
 static void
@@ -226,7 +226,8 @@ handler_pump_plugin_wq(event_handler_t *eh, char *redirect, char *prefix)
   while ((pmsg = dll_pop(plugin_wq)) != NULL) {
 
     /* targeting ourselves is probably invalid, let's change that */
-    if (prefix && strcmp(pmsg->target, eh->cfg->nick) == 0)
+    /* HACK: real nick needs to go here */
+    if (prefix && strcmp(pmsg->target, "buhmin") == 0)
       pmsg->target = prc_prefix_parse(prefix, NICK);
 
     if (redirect && *(redirect + 1) == '>')
@@ -241,43 +242,4 @@ handler_pump_plugin_wq(event_handler_t *eh, char *redirect, char *prefix)
     free(pmsg->buf);
     free(pmsg);
   }
-}
-
-
-/* this really doesn't belong here */
-int
-handler_join_networks(int epfd, dll_t *networks)
-{
-  cfg_net_t *net;
-  dll_link_t *li;
-  dll_t *wq;
-
-  li = networks->head;
-
-  while (li) {
-
-    net = li->buf;
-
-    if (!net->nick) {
-      fprintf(stderr, "no nick in %s\n", net->node);
-      return -1;
-    }
-
-    fprintf(stderr, "REG: node: %s ; service: %s\n", net->node, net->service);
-
-    proto_register(epfd, net->node, net->service, net, &wq);
-
-    fprintf(stderr, "REG: write-queue: %p\n", wq);
-
-    if (net->password)
-      dll_enq(wq, prc_msg("CAP REQ :sasl", NULL));
-
-    dll_enq(wq, prc_msg3("NICK %s\r\n", net->nick));
-
-    dll_enq(wq, prc_msg3("USER %s foo bar :buhman's minion\r\n", net->username));
-
-    li = li->next;
-  }
-
-  return 0;
 }

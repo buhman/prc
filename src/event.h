@@ -1,9 +1,12 @@
 #pragma once
 
 #include <sys/epoll.h>
+#include <sys/socket.h>
 
 #include "dll.h"
 #include "cfg.h"
+
+extern int evfd;
 
 typedef struct event_handler event_handler_t;
 typedef int (eh_fptr_t)(struct epoll_event*);
@@ -18,7 +21,7 @@ struct event_handler {
 };
 
 int
-event_init(int epfd);
+event_ev_init(int epfd);
 
 int
 event_add(int epfd,
@@ -34,4 +37,8 @@ int
 event_del(int epfd,
           struct epoll_event *ev);
 
-extern int evfd;
+int
+event_bind(int domain, int efd, struct sockaddr *sa);
+
+int
+event_accept(int efd, int sfd);
