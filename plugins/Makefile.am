@@ -2,7 +2,7 @@ AM_CFLAGS = \
 	-I$(top_srcdir)/lib \
 	-I$(top_srcdir)/bdb/src
 
-AM_LIBADD = \
+AM_LDADD = \
 	$(top_builddir)/lib/libprc.la
 
 lib_LTLIBRARIES = \

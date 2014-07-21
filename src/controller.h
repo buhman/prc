@@ -1,9 +1,6 @@
 #pragma once
 
 int
-controller_sendfd(int sfd, int fd);
-
-int
 controller_recvfd(int sfd);
 
 int

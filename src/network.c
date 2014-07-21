@@ -12,7 +12,7 @@
 #include "cfg.h"
 #include "network.h"
 #include "proto.h"
-#include "controller.h"
+#include "worker.h"
 
 int
 network_join_fds(int epfd, int fds[], int nfds)
@@ -77,7 +77,7 @@ network_join_cfg(int epfd, int cfd, dll_t *networks)
     }
 
     fprintf(stderr, "controller_sendfd\n");
-    ret = controller_sendfd(cfd, sfd);
+    ret = worker_sendfd(cfd, sfd);
     if (ret < 0)
       perror("controller_sendfd()");
 

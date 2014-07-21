@@ -5,14 +5,47 @@
 #include <unistd.h>
 #include <stdbool.h>
 
+#include <dlfcn.h>
+
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
 #include "prc.h"
-#include "event.h"
 #include "controller.h"
 #include "worker.h"
+
+static int
+start_worker(int cfd, int fds[], int nfds)
+{
+  int ret;
+  void *whandle;
+  char *error;
+  worker_main_t *worker;
+
+  /* HACK: RTLD_GLOBAL so plugins can access libprc symbols--the build
+     system is broken and plugins aren't properly linking libprc */
+
+  whandle = dlopen("libworker.so", RTLD_NOW | RTLD_GLOBAL);
+  if (whandle == NULL) {
+    fprintf(stderr, "%s\n", dlerror());
+    return -1;
+  }
+
+  *(void **)(&worker) = dlsym(whandle, "worker_main");
+  if ((error = dlerror()) != NULL) {
+    fprintf(stderr, "%s\n", error);
+    dlclose(whandle);
+    return -1;
+  }
+
+  ret = (*worker)(cfd, fds, nfds);
+  /* TODO: handle this */
+
+  dlclose(whandle);
+
+  return -1;
+}
 
 int
 main(int argc, char *argv[])
@@ -35,7 +68,7 @@ main(int argc, char *argv[])
 
     if (pid == 0) {
       close(sfds[0]);
-      return worker_main(sfds[1], fds, nfds);
+      return start_worker(sfds[1], fds, nfds);
     }
 
     close(sfds[1]);

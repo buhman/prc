@@ -1,16 +1,28 @@
 EXTRA_DIST = \
 	version.h.in
 
-bin_PROGRAMS = prc
-
-prc_CFLAGS = \
-	$(AM_CFLAGS) \
+AM_CFLAGS = \
 	$(WARNING_CFLAGS) \
 	$(GSASL_CFLAGS) \
 	-I$(top_srcdir)/lib \
 	-I$(top_srcdir)/bdb/src
 
+bin_PROGRAMS = prc
+
 prc_SOURCES = \
+	controller.c controller.h \
+	prc.c
+
+prc_LDADD = \
+	-ldl
+
+prc_LDFLAGS = \
+	-Wl,-rpath -Wl,/home/zack/prc/src/.libs
+
+lib_LTLIBRARIES = \
+	libworker.la
+
+libworker_la_SOURCES = \
 	event.c event.h \
 	proto.c proto.h \
 	term.c term.h \
@@ -19,16 +31,14 @@ prc_SOURCES = \
 	buf.c buf.h \
 	plugin.c plugin.h \
 	cfg.c cfg.h \
-	worker.c worker.h \
-	controller.c controller.h \
 	network.c network.h \
-	prc.c
+	worker.c worker.h
 
-prc_LDADD = \
+libworker_la_LIBADD = \
 	$(GSASL_LIBS) \
 	$(top_builddir)/lib/libprc.la \
 	$(top_builddir)/bdb/src/libbdb.la \
 	-ldl
 
-prc_LDFLAGS = \
+libworker_la_LDFLAGS = \
 	-Wl,-rpath -Wl,/home/zack/prc/plugins/.libs

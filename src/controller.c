@@ -3,58 +3,12 @@
 #include <unistd.h>
 
 #include <sys/socket.h>
+#include <sys/epoll.h>
 
 #include "prc.h"
 #include "controller.h"
-#include "event.h"
 
 #define MAXEVENT 10
-
-int
-controller_sendfd(int sfd, int fd)
-{
-  struct msghdr msg = {0};
-  struct cmsghdr *cmsg;
-
-  char buf[CMSG_SPACE(sizeof(int))];
-  int *fdptr;
-
-  struct iovec ib = {0};
-  char ip;
-
-  ssize_t retsize;
-
-  {
-    /* sendmsg's size calculations appear to be based on iov_len--if
-      this is zero, it appears no msg is actually sent. */
-
-    ib.iov_base = &ip;
-    ib.iov_len = 1;
-
-    msg.msg_iov = &ib;
-    msg.msg_iovlen = 1;
-  }
-
-  msg.msg_control = buf;
-  msg.msg_controllen = sizeof(buf);
-
-  cmsg = CMSG_FIRSTHDR(&msg);
-  cmsg->cmsg_level = SOL_SOCKET;
-  cmsg->cmsg_type = SCM_RIGHTS;
-  cmsg->cmsg_len = CMSG_LEN(sizeof(int));
-
-  fdptr = (int*)CMSG_DATA(cmsg);
-  memcpy(fdptr, &fd, sizeof(int));
-
-  msg.msg_controllen = cmsg->cmsg_len;
-
-  retsize = sendmsg(sfd, &msg, 0);
-  if (retsize < 0)
-    herror("sendmsg()", retsize);
-  fprintf(stderr, "SENDMSG: %zd\n", retsize);
-
-  return 0;
-}
 
 int
 controller_recvfd(int sfd)
