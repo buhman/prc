@@ -17,7 +17,7 @@ prc_LDADD = \
 	-ldl
 
 prc_LDFLAGS = \
-	-Wl,-rpath -Wl,/home/zack/prc/src/.libs
+	-Wl,-rpath -Wl,./src/.libs
 
 lib_LTLIBRARIES = \
 	libworker.la
@@ -41,4 +41,4 @@ libworker_la_LIBADD = \
 	-ldl
 
 libworker_la_LDFLAGS = \
-	-Wl,-rpath -Wl,/home/zack/prc/plugins/.libs
+	-Wl,-rpath -Wl,./plugins/.libs

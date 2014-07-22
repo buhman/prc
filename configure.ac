@@ -45,6 +45,7 @@ LT_INIT([dlopen disable-static])
 #### environment ####
 
 AC_HEADER_STDC
+AX_PTHREAD
 AC_CHECK_HEADERS([sys/socket.h sys/epoll.h])
 
 PKG_CHECK_MODULES(GSASL, [libgsasl])

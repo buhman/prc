@@ -20,6 +20,13 @@ sane method for target redirection.
 Most of this should hopefully happen naturally during the
 sandbox/IPC refactor.
 
+### more libtool
+
+It's probably a good idea to replace libdl with libltdl, and use
+libtool to handle the linker rpath.
+
+Plugins should also properly link libprc.
+
 ### buffer and tag mappings
 
 Incoming protocol messages should be tagged based on match -> tag

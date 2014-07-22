@@ -2,8 +2,7 @@ AM_CFLAGS = \
 	-I$(top_srcdir)/lib \
 	-I$(top_srcdir)/bdb/src
 
-AM_LDADD = \
-	$(top_builddir)/lib/libprc.la
+LIBS = $(top_builddir)/lib/libprc.la
 
 lib_LTLIBRARIES = \
 	libtime.la \
@@ -42,4 +41,5 @@ libquote_la_SOURCES = quote.c
 libsegfault_la_SOURCES = segfault.c
 
 libcourier_la_SOURCES = courier.c
-libcourier_la_LIBADD = $(AM_LDADD) -lpthread
+libcourier_la_LIBADD = $(LIBS) $(PTHREAD_LIBS)
+libcourier_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
