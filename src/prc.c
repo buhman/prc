@@ -23,10 +23,7 @@ start_worker(int cfd, int fds[], int nfds)
   char *error;
   worker_main_t *worker;
 
-  /* HACK: RTLD_GLOBAL so plugins can access libprc symbols--the build
-     system is broken and plugins aren't properly linking libprc */
-
-  whandle = dlopen("libworker.so", RTLD_NOW | RTLD_GLOBAL);
+  whandle = dlopen("libworker.so", RTLD_LAZY);
   if (whandle == NULL) {
     fprintf(stderr, "%s\n", dlerror());
     return -1;
