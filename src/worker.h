@@ -1,5 +1,6 @@
 #pragma once
 
+#include "prc.h"
 #include "event.h"
 
 #define worker_quit(str, ret)                   \
@@ -17,8 +18,6 @@
     return ret;                                 \
   } while (0);
 
-typedef int (worker_main_t)(int cfd, int fds[], int nfds);
-
 int
 worker_sendfd(int sfd, int fd);
 
@@ -28,4 +27,4 @@ worker_evfd(void);
 int
 worker_event(int epfd, struct epoll_event* evi, event_handler_t* ehi);
 
-worker_main_t worker_main;
+prc_main_t worker_main;

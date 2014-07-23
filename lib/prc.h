@@ -12,6 +12,8 @@
 #define herror(msg, ret)                        \
   do { perror(msg); return ret; } while (0)
 
+typedef int (prc_main_t)(int cfd, int fds[], int *nfds);
+
 /* prc_{c,d}tor: called on plugin_{,un}load() */
 typedef int (prc_plugin_ctor_t)(bdb_t *bdb, int evfd);
 

@@ -10,7 +10,6 @@ AM_CFLAGS = \
 bin_PROGRAMS = prc
 
 prc_SOURCES = \
-	controller.c controller.h \
 	prc.c
 
 prc_LDADD = \
@@ -20,7 +19,11 @@ prc_LDFLAGS = \
 	-Wl,-rpath -Wl,./src/.libs
 
 lib_LTLIBRARIES = \
-	libworker.la
+	libworker.la \
+	libcontroller.la
+
+libcontroller_la_SOURCES = \
+	controller.c controller.h
 
 libworker_la_SOURCES = \
 	event.c event.h \

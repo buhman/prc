@@ -134,12 +134,13 @@ worker_event(int epfd, struct epoll_event* evi, event_handler_t* ehi)
 }
 
 int
-worker_main(int cfd, int fds[], int nfds)
+worker_main(int cfd, int fds[], int *_nfds)
 {
   int epfd, ret, events;
   struct epoll_event evs[MAXEVENT], *evi;
   event_handler_t *ehi;
   cfg_t *cfg;
+  int nfds = *_nfds;
 
   {
     epfd = epoll_create1(EPOLL_CLOEXEC);

@@ -13,35 +13,33 @@
 
 #include "prc.h"
 #include "controller.h"
-#include "worker.h"
 
 static int
-start_worker(int cfd, int fds[], int nfds)
+dlstart(const char *path, const char *symbol, int cfd, int fds[], int *nfds)
 {
   int ret;
-  void *whandle;
+  void *handle;
   char *error;
-  worker_main_t *worker;
+  prc_main_t *_main;
 
-  whandle = dlopen("libworker.so", RTLD_LAZY);
-  if (whandle == NULL) {
+  handle = dlopen(path, RTLD_LAZY);
+  if (handle == NULL) {
     fprintf(stderr, "%s\n", dlerror());
     return -1;
   }
 
-  *(void **)(&worker) = dlsym(whandle, "worker_main");
+  *(void **)(&_main) = dlsym(handle, symbol);
   if ((error = dlerror()) != NULL) {
     fprintf(stderr, "%s\n", error);
-    dlclose(whandle);
+    dlclose(handle);
     return -1;
   }
 
-  ret = (*worker)(cfd, fds, nfds);
-  /* TODO: handle this */
+  ret = (*_main)(cfd, fds, nfds);
 
-  dlclose(whandle);
+  dlclose(handle);
 
-  return -1;
+  return ret;
 }
 
 int
@@ -57,19 +55,19 @@ main(int argc, char *argv[])
     if (ret < 0)
       herror("socketpair()", ret);
 
+    fprintf(stderr, "SOCKPAIR; c: %d w: %d\n", sfds[0], sfds[1]);
+
     pid = fork();
     if (pid < 0)
       herror("fork()", pid);
 
-    fprintf(stderr, "SOCKPAIR; c: %d w: %d\n\n", sfds[0], sfds[1]);
-
     if (pid == 0) {
       close(sfds[0]);
-      return start_worker(sfds[1], fds, nfds);
+      return dlstart("libworker.so", "worker_main", sfds[1], fds, &nfds);
     }
 
     close(sfds[1]);
-    ret = controller_main(sfds[0], fds, &nfds);
+    ret = dlstart("libcontroller.so", "controller_main", sfds[0], fds, &nfds);
     if (ret < 0)
       return ret;
 
