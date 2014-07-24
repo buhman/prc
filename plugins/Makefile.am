@@ -16,7 +16,8 @@ lib_LTLIBRARIES = \
 	libfullwidth.la \
 	libquote.la \
 	libsegfault.la \
-	libcourier.la
+	libcourier.la \
+	libsysinfo.la
 
 libtime_la_SOURCES = time.c
 
@@ -43,3 +44,5 @@ libsegfault_la_SOURCES = segfault.c
 libcourier_la_SOURCES = courier.c
 libcourier_la_LIBADD = $(LIBS) $(PTHREAD_LIBS)
 libcourier_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+
+libsysinfo_la_SOURCES = sysinfo.c
