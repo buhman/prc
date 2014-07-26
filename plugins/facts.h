@@ -12,6 +12,7 @@ typedef struct fact_ht fact_ht_t;
 
 struct fact_ht {
   char *fact;
+  char *key;
   UT_hash_handle hh;
 };
 

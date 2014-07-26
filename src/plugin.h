@@ -8,6 +8,7 @@ typedef struct plugin_handle_ht plugin_handle_ht_t;
 struct plugin_handle_ht {
   void *handle;
   prc_plugin_sym_t *sym;
+  char *name;
   UT_hash_handle hh;
 };
 
@@ -21,6 +22,9 @@ struct plugin_ht_t {
 void
 plugin_lookup(dll_t *wq, char *prefix, char *target,
               const char *cmd, char *args);
+
+void
+plugin_unload_all(void);
 
 void
 plugin_cmd(dll_t *wq, char *prefix, char *target, char *buf);

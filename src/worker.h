@@ -9,6 +9,8 @@
                                                 \
     handler_free();                             \
                                                 \
+    plugin_unload_all();                        \
+                                                \
     close(epfd);                                \
     close(evfd);                                \
                                                 \

@@ -110,26 +110,20 @@ plugin_load(char *name)
     item = malloc(sizeof(plugin_handle_ht_t));
     item->handle = handle;
     item->sym = reg_sym;
+    item->name = strdup(name);
 
-    HASH_ADD_KEYPTR(hh, handle_head, strdup(name), strlen(name), item);
+    HASH_ADD_KEYPTR(hh, handle_head, item->name, strlen(name), item);
   }
 
   return 0;
 }
 
 static int
-plugin_unload(char *name)
+plugin_unload(plugin_handle_ht_t *item)
 {
   prc_plugin_sym_t *reg_symi;
-  plugin_handle_ht_t *item;
   int err;
   char *error;
-
-  HASH_FIND_STR(handle_head, name, item);
-  if (!item) {
-    fprintf(stderr, "plugin [%s] not found\n", name);
-    return -1;
-  }
 
   {
     prc_plugin_dtor_t *reg_dtor;
@@ -157,7 +151,7 @@ plugin_unload(char *name)
     void *handle;
     handle = item->handle;
     HASH_DELETE(hh, handle_head, item);
-
+    free(item->name);
     free(item);
 
     err = dlclose(handle);
@@ -166,8 +160,31 @@ plugin_unload(char *name)
       return -1;
     }
   } /* ... */
+}
 
-  return 0;
+static int
+unload_handler(char *name)
+{
+  plugin_handle_ht_t *item;
+
+  HASH_FIND_STR(handle_head, name, item);
+  if (!item) {
+    fprintf(stderr, "plugin [%s] not found\n", name);
+    return -1;
+  }
+
+  return plugin_unload(item);
+}
+
+void
+plugin_unload_all() {
+
+  plugin_handle_ht_t *item, *itemp;
+
+  HASH_ITER(hh, handle_head, item, itemp) {
+
+    plugin_unload(item);
+  }
 }
 
 void
@@ -205,9 +222,9 @@ plugin_cmd(dll_t *wq, char *prefix, char *target, char *buf)
   if (strcmp(cmd, "load") == 0)
     err = plugin_load(args);
   else if (strcmp(cmd, "unload") == 0)
-    err = plugin_unload(args);
+    err = unload_handler(args);
   else if (strcmp(cmd, "reload") == 0) {
-    err = plugin_unload(args);
+    err = unload_handler(args);
     if (err >= 0)
       err = plugin_load(args);
   }

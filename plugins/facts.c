@@ -128,7 +128,7 @@ facts_init_ht(const char *path)
 {
   int dbfd, err;
   fact_ht_t *item;
-  char *buf, *ibuf, *ptr, *sp, *tok, *key;
+  char *buf, *ibuf, *ptr, *sp, *tok;
   size_t size;
 
   facts_head = NULL;
@@ -177,15 +177,15 @@ facts_init_ht(const char *path)
 
       *ptr = '\0';
 
-      tok = strtok_r(ibuf, "`", &sp);
-      key = strdup(tok);
-
       item = malloc(sizeof(fact_ht_t));
+
+      tok = strtok_r(ibuf, "`", &sp);
+      item->key = strdup(tok);
 
       tok = strtok_r(NULL, "", &sp);
       item->fact = strdup(tok);
 
-      HASH_ADD_KEYPTR(hh, facts_head, key, strlen(key), item);
+      HASH_ADD_KEYPTR(hh, facts_head, item->key, strlen(item->key), item);
 
       ibuf = ptr + 1;
     }
@@ -205,6 +205,7 @@ facts_destroy_ht()
   HASH_ITER(hh, facts_head, item, tmp) {
     HASH_DELETE(hh, facts_head, item);
     free(item->fact);
+    free(item->key);
     free(item);
   }
 }

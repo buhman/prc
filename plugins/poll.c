@@ -217,13 +217,17 @@ destroy_poll(poll_ht_t *poll)
   HASH_ITER(hh, poll->ballot, ballot, btemp) {
     HASH_DEL(poll->ballot, ballot);
     free(ballot->key);
+    free(ballot);
   }
 
   HASH_ITER(hh, poll->vote, vote, vtemp) {
     HASH_DEL(poll->vote, vote);
     free(vote->nick);
     free(vote->key);
+    free(vote);
   }
+
+  free(poll);
 }
 
 int
