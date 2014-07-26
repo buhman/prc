@@ -35,6 +35,27 @@ static const char *d6[] = {
   "\u2685", /* ⚅ */
 };
 
+static const char *dv[] = {
+  "kiss",
+  "lick",
+  "touch",
+  "rub",
+  "caress",
+  "fondle",
+  "rape",
+};
+
+static const char *dn[] = {
+  "bum",
+  "genitals",
+  "lips",
+  "back",
+  "neck",
+  "cheek",
+  "tentacles",
+  "rolls",
+};
+
 static const char *dx[] = {
   "\u2460", /* (1) */
   "\u2461", /* (2) */
@@ -101,7 +122,7 @@ dice_cmd(dll_t *wq, char *prefix, char* target, char *args)
 {
   long long num, i, flen, nface;
   char *buf, *bufi, *tok;
-  const char **faces;
+  const char **faces, *ptr;
 
   nface = 6;
   if (!args)
@@ -132,12 +153,14 @@ dice_cmd(dll_t *wq, char *prefix, char* target, char *args)
     faces = d4;
   else if (nface == 6)
     faces = d6;
+  else if (nface == 7)
+    faces = dv;
+  else if (nface == 8)
+    faces = dn;
   else
     faces = dx;
 
-  flen = strlen(faces[0]);
-
-  fprintf(stderr, "flen: %lld; faces: %lld\n", flen, nface);
+  //fprintf(stderr, "flen: %lld; faces: %lld\n", flen, nface);
 
   buf = malloc(MSG_SIZE);
 
@@ -150,7 +173,11 @@ dice_cmd(dll_t *wq, char *prefix, char* target, char *args)
       continue;
     }
 
-    strcpy(bufi, faces[random() % nface]);
+    ptr = faces[random() % nface];
+
+    flen = strlen(ptr);
+
+    strcpy(bufi, ptr);
     *(bufi + flen) = ' ';
   }
 
