@@ -20,6 +20,14 @@ sane method for target redirection.
 Most of this should hopefully happen naturally during the
 sandbox/IPC refactor.
 
+### plugin namespaces
+
+plugins should be able to register a 'namespace' for their commands. A call to 'foo' command from the 'bar' namespace would be '$bar.foo'.
+
+### plugin help
+
+plugins should be able to in a generic way be able to specify a usage/help string for each command--libprc would provide a 'usage' macro that would spit this out.
+
 ### more libtool
 
 It's probably a good idea to replace libdl with libltdl, and use

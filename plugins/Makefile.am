@@ -17,7 +17,8 @@ lib_LTLIBRARIES = \
 	libquote.la \
 	libsegfault.la \
 	libcourier.la \
-	libsysinfo.la
+	libsysinfo.la \
+	libpoll.la
 
 libtime_la_SOURCES = time.c
 
@@ -46,3 +47,5 @@ libcourier_la_LIBADD = $(LIBS) $(PTHREAD_LIBS)
 libcourier_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 
 libsysinfo_la_SOURCES = sysinfo.c
+
+libpoll_la_SOURCES = poll.c poll.h
