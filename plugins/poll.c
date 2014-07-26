@@ -10,6 +10,7 @@ prc_plugin_sym_t prc_sym[] = {
   {"poll.vote", vote_cmd},
   {"poll.count", count_cmd},
   {"poll.close", close_cmd},
+  {"poll.adhoc", adhoc_cmd},
   {NULL},
 };
 
@@ -125,8 +126,16 @@ vote_cmd(dll_t *wq, char *prefix, char *target, char *tok)
 
   HASH_FIND(hh, poll->ballot, ptr + 1, strlen(ptr + 1), ballot);
   if (!ballot) {
-    dll_enq(wq, prc_msg2("PRIVMSG", target, "[key not in ballot]"));
-    return;
+    if (poll->adhoc) {
+      ballot = calloc(1, sizeof(ballot_ht_t));
+      ballot->key = strdup(ptr + 1);
+
+      HASH_ADD_KEYPTR(hh, poll->ballot, ballot->key, strlen(ballot->key), ballot);
+    }
+    else {
+      dll_enq(wq, prc_msg2("PRIVMSG", target, "[key not in ballot]"));
+      return;
+    }
   }
 
   vote = calloc(1, sizeof(poll_ht_t));
@@ -203,6 +212,28 @@ close_cmd(dll_t *wq, char *prefix, char *target, char *tok)
   poll->time = time(NULL);
 
   dll_enq(wq, prc_msg2("PRIVMSG", target, "[success]"));
+}
+
+static void
+adhoc_cmd(dll_t *wq, char *prefix, char *target, char *tok)
+{
+  poll_ht_t *poll;
+
+  if (!tok) {
+    dll_enq(wq, prc_msg2("PRIVMSG", target, "[invalid]"));
+    return;
+  }
+
+  HASH_FIND(hh, poll_head, tok, strlen(tok), poll);
+
+  if (!poll) {
+    dll_enq(wq, prc_msg2("PRIVMSG", target, "[poll does not exist]"));
+    return;
+  }
+
+  poll->adhoc = !poll->adhoc;
+
+  dll_enq(wq, prc_msg2("PRIVMSG", target, "[adhoc: %d]", poll->adhoc));
 }
 
 static void
