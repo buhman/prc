@@ -40,6 +40,7 @@ libdice_la_SOURCES = dice.c
 libfullwidth_la_SOURCES = fullwidth.c
 
 libquote_la_SOURCES = quote.c
+libquote_la_LIBADD = $(LIBS) $(top_builddir)/bdb/src/libbdb.la
 
 libsegfault_la_SOURCES = segfault.c
 
