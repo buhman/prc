@@ -225,7 +225,7 @@ proto_write(struct epoll_event *ev)
 
   while ((buf = dll_pop(eh->wq)) != NULL) {
 
-    term_printf(buf);
+    term_printf("%s", buf);
 
     ret = send(eh->fd, buf, strlen(buf), 0);
     assert(ret > 0);
@@ -283,7 +283,7 @@ int proto_parse_line(struct epoll_event *ev,
 
   *(buf + len) = '\0';
 
-  term_printf(buf);
+  term_printf("%s", buf);
 
   while (true) {
 

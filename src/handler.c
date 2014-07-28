@@ -160,7 +160,7 @@ handler_privmsg(event_handler_t *eh, char *prefix, char *buf)
 
   tok = strchr(buf, ' ');
   if (!tok) {
-    term_printf("privmsg(): no tok1");
+    term_printf("%s", "privmsg(): no tok1");
     return;
   }
   *tok = '\0';

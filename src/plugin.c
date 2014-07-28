@@ -160,6 +160,8 @@ plugin_unload(plugin_handle_ht_t *item)
       return -1;
     }
   } /* ... */
+
+  return 0;
 }
 
 static int
@@ -209,7 +211,7 @@ plugin_cmd(dll_t *wq, char *prefix, char *target, char *buf)
 
   tok = strchr(buf, ' ');
   if (!tok) {
-    term_printf("cmd(): no tok");
+    term_printf("%s", "cmd(): no tok");
     return;
   }
 
