@@ -16,6 +16,7 @@
 #include <netdb.h>
 
 #include <gnutls/gnutls.h>
+#include <gnutls/x509.h>
 
 #include "db.h"
 #include "tag.h"
@@ -189,12 +190,60 @@ proto_connect(const char *node,
   return sfd;
 }
 
+static int
+certificate_callback(gnutls_session_t session)
+{
+  unsigned int status;
+  int ret, type;
+  const char *hostname;
+  gnutls_datum_t out;
+  
+  hostname = gnutls_session_get_ptr(session);
+
+  {
+    gnutls_typed_vdata_st data[2];
+
+    memset(data, 0, sizeof(data));
+
+    data[0].type = GNUTLS_DT_DNS_HOSTNAME;
+    data[0].data = (void*)hostname;
+
+    data[1].type = GNUTLS_DT_KEY_PURPOSE_OID;
+    data[1].data = (void*)GNUTLS_KP_TLS_WWW_SERVER;
+
+    ret = gnutls_certificate_verify_peers(session, data, 2,
+					  &status);
+    if (ret < 0)
+      gerror("verify_peers", GNUTLS_E_CERTIFICATE_ERROR);
+  }
+
+  
+  type = gnutls_certificate_type_get(session);
+
+  ret = gnutls_certificate_verification_status_print(status, type,
+						     &out, 0);
+  if (ret < 0)
+    gerror("vertfication_status_print", GNUTLS_E_CERTIFICATE_ERROR);
+
+  fprintf(stderr, "GNUTLS VERIFY: %s\n", out.data);
+
+  gnutls_free(out.data);
+
+  /* FIXME: (oftc is borked)
+  if (status != 0)
+    return GNUTLS_E_CERTIFICATE_ERROR;
+  */
+  return 0;
+}
+
+
 int
-proto_tls(int sfd, gnutls_session_t *session_out)
+proto_tls(int sfd, gnutls_session_t *session_out, const char *node)
 {
   int ret;
   gnutls_certificate_credentials_t cred;
   gnutls_session_t session;
+  char *desc;
 
   ret = gnutls_certificate_allocate_credentials(&cred);
   if (ret < 0)
@@ -204,13 +253,34 @@ proto_tls(int sfd, gnutls_session_t *session_out)
   if (ret < 0)
     gerror("init", ret);
 
-  gnutls_set_default_priority(session);
+  gnutls_session_set_ptr(session, (void*)node);
+  
+  ret = gnutls_server_name_set(session, GNUTLS_NAME_DNS, node, strlen(node));
+  if (ret < 0)
+    gerror("server_name_set", ret);
+
+  ret = gnutls_set_default_priority(session);
   if (ret < 0)
     gerror("set_default_priority", ret);
 
-  gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, cred);
-  if (ret < 0)
-    gerror("set_credentials_set", ret);
+  {
+    ret = gnutls_certificate_set_x509_trust_file(cred, 
+						 "/etc/ssl/certs/ca-certificates.crt",
+						 GNUTLS_X509_FMT_PEM);
+    if (ret < 0)
+      gerror("set_x509_trust_file", ret);
+
+    gnutls_certificate_set_verify_function(cred, certificate_callback);
+    
+    ret = gnutls_certificate_set_x509_key_file(cred, "../buhmin.crt", 
+					       "../buhmin.key", GNUTLS_X509_FMT_PEM);
+    if (ret < 0)
+      gerror("certificate_set_x509_key_file", ret);
+
+    gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, cred);
+    if (ret < 0)
+      gerror("set_credentials_set", ret);
+  }
 
   gnutls_transport_set_int(session, sfd);
   if (ret < 0)
@@ -223,6 +293,10 @@ proto_tls(int sfd, gnutls_session_t *session_out)
   ret = gnutls_handshake(session);
   if (ret < 0)
     gerror("handshake", ret);
+
+  desc = gnutls_session_get_desc(session);
+  fprintf(stderr, "GNUTLS SESSION: %s\n", desc);
+  gnutls_free(desc);
 
   *session_out = session;
 

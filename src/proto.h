@@ -43,7 +43,7 @@ proto_connect(const char *node,
               const char *service);
 
 int
-proto_tls(int sfd, gnutls_session_t *session_out);
+proto_tls(int sfd, gnutls_session_t *session_out, const char *node);
 
 int
 proto_read(struct epoll_event *ev);

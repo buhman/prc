@@ -80,7 +80,7 @@ network_join_cfg(int epfd, int cfd, dll_t *networks)
       continue;
     }
 
-    ret = proto_tls(sfd, &session);
+    ret = proto_tls(sfd, &session, net->node);
     if (ret < 0)
       gerror("proto_tls", ret);
 
