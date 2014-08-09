@@ -4,6 +4,7 @@ EXTRA_DIST = \
 AM_CFLAGS = \
 	$(WARNING_CFLAGS) \
 	$(GSASL_CFLAGS) \
+	$(GNUTLS_CFLAGS) \
 	-I$(top_srcdir)/lib \
 	-I$(top_srcdir)/bdb/src
 
@@ -39,6 +40,7 @@ libworker_la_SOURCES = \
 
 libworker_la_LIBADD = \
 	$(GSASL_LIBS) \
+	$(GNUTLS_LIBS) \
 	$(top_builddir)/lib/libprc.la \
 	$(top_builddir)/bdb/src/libbdb.la \
 	-ldl

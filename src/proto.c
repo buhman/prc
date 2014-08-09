@@ -15,6 +15,8 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include <gnutls/gnutls.h>
+
 #include "db.h"
 #include "tag.h"
 #include "row.h"
@@ -103,7 +105,7 @@ proto_register(int epfd,
                int sfd,
                const char *node,
                cfg_net_t *cfg,
-               dll_t **owq)
+               struct epoll_event **oev)
 {
   int err;
   dll_t *wq;
@@ -125,10 +127,10 @@ proto_register(int epfd,
 
   proto_add_node(node, proto.cev);
 
-  if (owq)
-    *owq = wq;
+  if (oev)
+    *oev = ev;
 
-  return sfd;
+  return 0;
 }
 
 int
@@ -188,6 +190,46 @@ proto_connect(const char *node,
 }
 
 int
+proto_tls(int sfd, gnutls_session_t *session_out)
+{
+  int ret;
+  gnutls_certificate_credentials_t cred;
+  gnutls_session_t session;
+
+  ret = gnutls_certificate_allocate_credentials(&cred);
+  if (ret < 0)
+    gerror("allocate_credentials", ret);
+
+  ret = gnutls_init(&session, GNUTLS_CLIENT);
+  if (ret < 0)
+    gerror("init", ret);
+
+  gnutls_set_default_priority(session);
+  if (ret < 0)
+    gerror("set_default_priority", ret);
+
+  gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, cred);
+  if (ret < 0)
+    gerror("set_credentials_set", ret);
+
+  gnutls_transport_set_int(session, sfd);
+  if (ret < 0)
+    gerror("transport_set_int", ret);
+
+  gnutls_handshake_set_timeout(session, GNUTLS_DEFAULT_HANDSHAKE_TIMEOUT);
+  if (ret < 0)
+    gerror("handshake_set_timeout", ret);
+
+  ret = gnutls_handshake(session);
+  if (ret < 0)
+    gerror("handshake", ret);
+
+  *session_out = session;
+
+  return 0;
+}
+
+int
 proto_read(struct epoll_event *ev)
 {
   event_handler_t *eh = (event_handler_t*)ev->data.ptr;
@@ -195,12 +237,18 @@ proto_read(struct epoll_event *ev)
   char *rbuf = malloc(BUFSIZE);
 
   while (true) {
-
-    len = recv(eh->fd, rbuf, BUFSIZE, 0);
+    
+    if (eh->session)
+      len = gnutls_record_recv(eh->session, rbuf, BUFSIZE);
+    else
+      len = recv(eh->fd, rbuf, BUFSIZE, 0);
     if (len < 0) {
       if (errno == EAGAIN || errno == EWOULDBLOCK)
         break;
-      perror("recv()");
+      if (eh->session)
+	fprintf(stderr, "%s: %zd, %s\n", "record_recv", len, gnutls_strerror(len));
+      else
+	perror("recv()");
       free(rbuf);
       return -1;
     } else if (len == 0) {
@@ -227,7 +275,10 @@ proto_write(struct epoll_event *ev)
 
     term_printf("%s", buf);
 
-    ret = send(eh->fd, buf, strlen(buf), 0);
+    if (eh->session)
+      ret = gnutls_record_send(eh->session, buf, strlen(buf));
+    else
+      ret = send(eh->fd, buf, strlen(buf), 0);
     assert(ret > 0);
 
     free(buf);

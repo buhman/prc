@@ -2,6 +2,7 @@
 
 #include <sys/epoll.h>
 #include <sys/socket.h>
+#include <gnutls/gnutls.h>
 
 #include "dll.h"
 #include "cfg.h"
@@ -14,6 +15,7 @@ typedef int (eh_fptr_t)(struct epoll_event*);
 struct event_handler {
   int epfd;
   int fd;
+  gnutls_session_t session;
   eh_fptr_t *rf;
   eh_fptr_t *wf;
   dll_t *wq;

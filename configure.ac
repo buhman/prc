@@ -50,6 +50,8 @@ AC_CHECK_HEADERS([sys/socket.h sys/epoll.h])
 
 PKG_CHECK_MODULES(GSASL, [libgsasl])
 
+PKG_CHECK_MODULES(GNUTLS, [gnutls >= 3.3.0])
+
 #
 
 AC_CONFIG_FILES([

@@ -107,7 +107,7 @@ controller_main(int wfd, int fds[], int *nfds)
       if (fds[*nfds] == 0) {
         close(wfd);
         close(epfd);
-        return 0;
+        return -1; /* FIXME 0 */
       }
 
       fprintf(stderr, "CONTROLLER: recvfd: %d\n", fds[*nfds]);

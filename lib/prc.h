@@ -12,6 +12,13 @@
 #define herror(msg, ret)                        \
   do { perror(msg); return ret; } while (0)
 
+#define gerror(msg, ret)                        \
+  do {						\
+    fprintf(stderr, "\n\n%s: %d, %s\n", msg, ret,	\
+	       gnutls_strerror(ret));		\
+    return ret;					\
+  } while (0) 
+
 typedef int (prc_main_t)(int cfd, int fds[], int *nfds);
 
 /* prc_{c,d}tor: called on plugin_{,un}load() */

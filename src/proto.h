@@ -36,11 +36,14 @@ proto_register(int epfd,
                int sfd,
                const char *node,
                cfg_net_t *cfg,
-               dll_t **owq);
+               struct epoll_event **oev);
 
 int
 proto_connect(const char *node,
               const char *service);
+
+int
+proto_tls(int sfd, gnutls_session_t *session_out);
 
 int
 proto_read(struct epoll_event *ev);

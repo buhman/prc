@@ -7,6 +7,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <gnutls/gnutls.h>
+
 #include "dll.h"
 #include "prc.h"
 #include "cfg.h"
@@ -45,7 +47,9 @@ network_join_cfg(int epfd, int cfd, dll_t *networks)
 {
   cfg_net_t *net;
   dll_link_t *li;
-  dll_t *wq;
+  struct epoll_event *ev;
+  gnutls_session_t session;
+  event_handler_t *eh;
 
   int ret, sfd;
 
@@ -68,7 +72,7 @@ network_join_cfg(int epfd, int cfd, dll_t *networks)
       return sfd;
     }
 
-    ret = proto_register(epfd, sfd, net->node, net, &wq);
+    ret = proto_register(epfd, sfd, net->node, net, &ev);
     if (ret < 0) {
       close(sfd);
       perror("proto_register()");
@@ -76,19 +80,26 @@ network_join_cfg(int epfd, int cfd, dll_t *networks)
       continue;
     }
 
+    ret = proto_tls(sfd, &session);
+    if (ret < 0)
+      gerror("proto_tls", ret);
+
+    eh = ev->data.ptr;
+    eh->session = session;
+
     fprintf(stderr, "controller_sendfd\n");
     ret = worker_sendfd(cfd, sfd);
     if (ret < 0)
       perror("controller_sendfd()");
 
-    fprintf(stderr, "NET: write-queue: %p\n", wq);
+    fprintf(stderr, "NET: write-queue: %p\n", eh->wq);
 
     if (net->password)
-      dll_enq(wq, prc_msg("CAP REQ :sasl", NULL));
+      dll_enq(eh->wq, prc_msg("CAP REQ :sasl", NULL));
 
-    dll_enq(wq, prc_msg3("NICK %s\r\n", net->nick));
+    dll_enq(eh->wq, prc_msg3("NICK %s\r\n", net->nick));
 
-    dll_enq(wq, prc_msg3("USER %s foo bar :buhman's minion\r\n", net->username));
+    dll_enq(eh->wq, prc_msg3("USER %s foo bar :buhman's minion\r\n", net->username));
 
     li = li->next;
   }
