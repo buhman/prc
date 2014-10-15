@@ -77,8 +77,9 @@ facts_add(const char *key,
 
     item = malloc(sizeof(fact_ht_t));
     item->fact = strdup(fact);
+    item->key = strdup(key);
 
-    HASH_ADD_KEYPTR(hh, facts_head, strdup(key), strlen(key), item);
+    HASH_ADD_KEYPTR(hh, facts_head, item->key, strlen(key), item);
   } /* ... */
 
   {
