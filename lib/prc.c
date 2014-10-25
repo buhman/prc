@@ -91,3 +91,50 @@ prc_msg3(const char *format, ...)
 
   return buf;
 }
+
+char **
+prc_parse_args(char *tok, int nargs)
+{
+  char *ptr;
+  char **args, **argi;
+
+  args = malloc(sizeof(char*) * nargs);
+
+  if (!tok)
+    goto invalid;
+
+  for (argi = args; argi < args + nargs; argi++) {
+
+    ptr = strchr(tok, ' ');
+    if (!ptr) {
+      if (argi - args < nargs - 1)
+        goto invalid;
+    }
+    else
+      *ptr = '\0';
+
+    *argi = tok;
+
+    tok = ptr + 1;
+  }
+
+  return args;
+
+ invalid:
+  free(args);
+  return NULL;
+}
+
+unsigned long int 
+prc_rand_lim(unsigned long int limit)
+{  
+  unsigned long int divisor, ret;
+
+  divisor = RAND_MAX / limit;
+
+  do {
+    ret = random() / divisor;
+  } while (ret > limit);
+
+  return ret;
+}

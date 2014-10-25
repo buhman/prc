@@ -33,39 +33,6 @@ parse_move(char *m)
   return MOVE_BAD;
 }
 
-static char **
-parse_args(char *tok, int nargs)
-{
-  char *ptr;
-  char **args, **argi;
-
-  args = malloc(sizeof(char*) * nargs);
-
-  if (!tok)
-    goto invalid;
-
-  for (argi = args; argi < args + nargs; argi++) {
-
-    ptr = strchr(tok, ' ');
-    if (!ptr) {
-      if (argi - args < nargs - 1)
-        goto invalid;
-    }
-    else
-      *ptr = '\0';
-
-    *argi = tok;
-
-    tok = ptr + 1;
-  }
-
-  return args;
-
- invalid:
-  free(args);
-  return NULL;
-}
-
 static void
 add_move(char *self, char *foe, move_e m)
 {
@@ -172,7 +139,7 @@ rps_cmd(dll_t *wq, char *prefix, char *target, char *tok)
   move_e m;
   move_ht_t *move_foe;
 
-  args = parse_args(tok, ARG_LAST);
+  args = prc_parse_args(tok, ARG_LAST);
   if (args == NULL) {
     dll_enq(wq, prc_msg2("PRIVMSG", target, "[invalid]"));
     return;
@@ -223,7 +190,7 @@ stats_cmd(dll_t *wq, char *prefix, char *target, char *tok)
   score_ht_t *score;
   char **name;
 
-  name = parse_args(tok, 1);
+  name = prc_parse_args(tok, 1);
   if (name == NULL) {
     dll_enq(wq, prc_msg2("PRIVMSG", target, "[invalid]"));
     return;

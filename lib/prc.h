@@ -74,3 +74,9 @@ prc_msg2(const char *cmd, const char *target, const char *format, ...);
 
 char*
 prc_msg3(const char *format, ...);
+
+char**
+prc_parse_args(char *tok, int nargs);
+
+unsigned long int 
+prc_rand_lim(unsigned long int limit);

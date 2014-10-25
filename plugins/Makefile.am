@@ -19,7 +19,8 @@ lib_LTLIBRARIES = \
 	libcourier.la \
 	libsysinfo.la \
 	libpoll.la \
-	librps.la
+	librps.la \
+	libweight.la
 
 libtime_la_SOURCES = time.c
 
@@ -53,3 +54,5 @@ libsysinfo_la_SOURCES = sysinfo.c
 libpoll_la_SOURCES = poll.c poll.h
 
 librps_la_SOURCES = rps.c rps.h
+
+libweight_la_SOURCES = weight.c weight.h weight_handler.c
