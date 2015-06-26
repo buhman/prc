@@ -1,3 +1,0 @@
-#pragma once
-
-#define PRC_VERSION "@PRC_VERSION@"

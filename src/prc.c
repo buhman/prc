@@ -1,79 +1,41 @@
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
-
-#include <unistd.h>
-#include <stdbool.h>
-
-#include <dlfcn.h>
 
 #include <sys/epoll.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 
-#include "prc.h"
-#include "controller.h"
+#include "buh/net.h"
+#include "buh/buh.h"
 
-static int
-dlstart(const char *path, const char *symbol, int cfd, int fds[], int *nfds)
-{
-  int ret;
-  void *handle;
-  char *error;
-  prc_main_t *_main;
+#include "bus/net.h"
 
-  handle = dlopen(path, RTLD_LAZY);
-  if (handle == NULL) {
-    fprintf(stderr, "%s\n", dlerror());
-    return -1;
-  }
+#include "prc/prc.h"
+#include "proto.h"
+#include "method.h"
 
-  *(void **)(&_main) = dlsym(handle, symbol);
-  if ((error = dlerror()) != NULL) {
-    fprintf(stderr, "%s\n", error);
-    dlclose(handle);
-    return -1;
-  }
-
-  ret = (*_main)(cfd, fds, nfds);
-
-  dlclose(handle);
-
-  return ret;
-}
+event_handler *bus_eh;
 
 int
 main(int argc, char *argv[])
 {
-  int ret, sfds[2], fds[256], nfds = 0;
+  int efd, sfd;
+  event_handler *eh;
 
-  pid_t pid;
+  efd = epoll_create1(EPOLL_CLOEXEC);
+  if (efd < 0)
+    herror("epoll_create1");
 
-  while (true) {
+  sfd = buh_connect_unix(efd, "/run/bbus/daemon.sock", &eh);
+  if (sfd < 0)
+    herror("buh_connect_unix");
 
-    ret = socketpair(AF_UNIX, SOCK_STREAM, 0, sfds);
-    if (ret < 0)
-      herror("socketpair()", ret);
+  eh->in.recv = prc_method_read_cb;
+  bus_eh = eh;
 
-    fprintf(stderr, "SOCKPAIR; c: %d w: %d\n", sfds[0], sfds[1]);
+  prc_method_map_init();
 
-    pid = fork();
-    if (pid < 0)
-      herror("fork()", pid);
+  bb_register(eh, "prccd");
 
-    if (pid == 0) {
-      close(sfds[0]);
-      return dlstart("libworker.so", "worker_main", sfds[1], fds, &nfds);
-    }
-
-    close(sfds[1]);
-    ret = dlstart("libcontroller.so", "controller_main", sfds[0], fds, &nfds);
-    if (ret < 0)
-      return ret;
-
-    close(sfds[0]);
-
-  } /* .. */
+  while (!buh_event_iter(efd)) {
+  }
 
   return 0;
 }

@@ -5,45 +5,19 @@ AM_CFLAGS = \
 	$(WARNING_CFLAGS) \
 	$(GSASL_CFLAGS) \
 	$(GNUTLS_CFLAGS) \
-	-I$(top_srcdir)/lib \
-	-I$(top_srcdir)/bdb/src
+	-I$(top_srcdir)/lib/buh/include \
+	-I$(top_srcdir)/lib/bus/include \
+	-I$(top_srcdir)/include
 
 bin_PROGRAMS = prc
 
 prc_SOURCES = \
-	prc.c
+	prc.h prc.c \
+	proto.h proto.c \
+	method.h method.c \
+	handler.h handler.c
 
 prc_LDADD = \
-	-ldl
-
-prc_LDFLAGS = \
-	-Wl,-rpath -Wl,./src/.libs
-
-lib_LTLIBRARIES = \
-	libworker.la \
-	libcontroller.la
-
-libcontroller_la_SOURCES = \
-	controller.c controller.h
-
-libworker_la_SOURCES = \
-	event.c event.h \
-	proto.c proto.h \
-	term.c term.h \
-	handler.c handler.h \
-	sasl.c sasl.h \
-	buf.c buf.h \
-	plugin.c plugin.h \
-	cfg.c cfg.h \
-	network.c network.h \
-	worker.c worker.h
-
-libworker_la_LIBADD = \
-	$(GSASL_LIBS) \
-	$(GNUTLS_LIBS) \
-	$(top_builddir)/lib/libprc.la \
-	$(top_builddir)/bdb/src/libbdb.la \
-	-ldl
-
-libworker_la_LDFLAGS = \
-	-Wl,-rpath -Wl,./plugins/.libs
+	$(top_builddir)/lib/buh/lib/libbuh.la \
+	$(top_builddir)/lib/bus/lib/bus/libbus.la \
+	$(top_builddir)/lib/prc/libprc.la

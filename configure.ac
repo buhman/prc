@@ -2,7 +2,6 @@
 
 AC_PREREQ([2.69])
 AC_INIT([prc],[m4_esyscmd(./git-version)],[zack@buhman.org],[https://buhman.org/cgit/prc.git])
-AC_CONFIG_SRCDIR([lib/prc.h], [bdb/src/bdb.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -58,10 +57,12 @@ AC_CONFIG_FILES([
 Makefile
 lib/Makefile
 src/Makefile
-plugins/Makefile
-lib/version.h
+lib/prc/Makefile
 ])
 
-AC_CONFIG_SUBDIRS([bdb])
+AC_CONFIG_SUBDIRS([
+lib/buh
+lib/bus
+])
 
 AC_OUTPUT

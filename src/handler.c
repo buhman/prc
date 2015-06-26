@@ -1,245 +1,57 @@
-#include <stdio.h>
-#include <assert.h>
+#include "buh/hash.h"
+#include "bus/net.h"
+#include "prc/prc.h"
 
-#include "prc.h"
-#include "sasl.h"
-#include "term.h"
-#include "plugin.h"
 #include "handler.h"
 #include "proto.h"
 
-static cmd_handler_t handler_cap;
-static cmd_handler_t handler_authenticate;
-static cmd_handler_t handler_ping;
-static cmd_handler_t handler_capend;
-static cmd_handler_t handler_welcome;
-static cmd_handler_t handler_privmsg;
-
-static handler_ht_t *handler_head;
-
-static handler_sym_t _handler_sym[] = {
-  {"CAP", handler_cap},
-  {"AUTHENTICATE", handler_authenticate},
-  {"PING", handler_ping},
-  {"PRIVMSG", handler_privmsg},
-  {"900", handler_capend},
-  {"001", handler_welcome},
-};
-
-static dll_t *plugin_wq;
+static hash_table_t command_ht = {0};
 
 void
-handler_init()
+prc_handler_subscribe_cmd(event_handler *eh, const char *command, const char *target)
 {
-  handler_sym_t *hsti;
-  handler_ht_t *item;
+  prc_handler_t *handler;
 
-  int hst_size = sizeof(_handler_sym) / sizeof(*_handler_sym);
+  handler = malloc(sizeof (prc_handler_t));
+  handler->target = strdup(target);
+  handler->eh = eh;
 
-  handler_head = NULL;
-
-  for(hsti = _handler_sym; hsti < _handler_sym + hst_size; hsti++) {
-
-    item = malloc(sizeof(handler_ht_t));
-    item->func = hsti->func;
-
-    //fprintf(stderr, "HHTH [%s] -> [%p]\n", hsti->name, *(void**)&hsti->func);
-    HASH_ADD_KEYPTR(hh, handler_head, hsti->name, strlen(hsti->name), item);
-  }
-
-  plugin_wq = calloc(1, sizeof(dll_t));
+  hash_put(&command_ht, command, handler);
 }
 
-void
-handler_free()
+static inline void
+prc_handler_cmd_run(prc_msg_t *pmsg, bb_message *bmsg)
 {
-  free(plugin_wq);
-}
+  hash_iter_t iter;
+  prc_handler_t *handler;
 
-void
-handler_lookup(char *command,
-               event_handler_t *eh,
-               char *prefix,
-               char *buf)
-{
-  handler_ht_t *item;
+  hash_iter(&command_ht, pmsg->command, &iter);
 
-  HASH_FIND_STR(handler_head, command, item);
-
-  if (item != NULL)
-    (item->func)(eh, prefix, buf);
-}
-
-static void
-handler_cap(event_handler_t *eh, char *prefix, char *buf)
-{
-  /* lazy */
-
-  dll_enq(eh->wq, prc_msg("AUTHENTICATE PLAIN", NULL));
-}
-
-static void
-handler_authenticate(event_handler_t *eh, char *prefix, char *buf)
-{
-  char *cred;
-
-  /* lazy */
-
-  if (sasl_auth(eh->cfg->nick, eh->cfg->password, &cred) < 0)
-    return;
-
-  dll_enq(eh->wq, prc_msg("AUTHENTICATE", cred, NULL));
-
-  free(cred);
-}
-
-static void
-handler_capend(event_handler_t *eh, char *prefix, char *buf)
-{
-  dll_enq(eh->wq, prc_msg("CAP END", NULL));
-}
-
-static void
-handler_ping(event_handler_t *eh, char *prefix, char *buf)
-{
-  dll_enq(eh->wq, prc_msg3("PONG\r\n"));
-}
-
-static void
-handler_welcome(event_handler_t *eh, char *prefix, char *buf)
-{
-  dll_link_t *li;
-
-  li = eh->cfg->channels->head;
-
-  while (li) {
-
-    dll_enq(eh->wq, prc_msg3("JOIN %s\r\n", (char*)li->buf));
-
-    li = li->next;
+  while ((handler = hash_next(&iter)) != NULL) {
+    bmsg->target = handler->target;
+    bb_sendmsg(handler->eh, bmsg);
+    /* fixme: do something with sendmsg return? */
   }
 }
 
-static void
-plugin_switch(char *prefix, char *target, char *msg, char *args)
+int
+prc_handler(event_handler *eh, void *buf, size_t len)
 {
-  char *tok;
+  prc_msg_pack_t *pack;
+  prc_msg_t pmsg = {0};
+  bb_message bmsg = {
+    .sender = "prccd", /* fixme? */
+  };
 
-  // plugin prefix
-  switch (*msg) {
-  case '\001':
-    plugin_lookup(plugin_wq, prefix, target, "ctcp", args);
-    break;
-  case '`':
-    plugin_lookup(plugin_wq, prefix, target, "fact_find", args);
-    break;
-  case '%':
-    plugin_lookup(plugin_wq, prefix, target, "fact_add", args);
-    break;
-  case '$':
-    {
-      tok = strchr(msg + 1, ' ');
-      if (tok) {
-        *tok = '\0';
-        plugin_lookup(plugin_wq, prefix, target, args, tok + 1);
-      }
-      else
-        plugin_lookup(plugin_wq, prefix, target, args, NULL);
-    }
-    break;
-  case '#':
-    plugin_cmd(plugin_wq, prefix, target, args);
-    break;
-  }
-}
+  prc_proto_parse_msg(eh, buf, &pmsg);
 
-static void
-handler_privmsg(event_handler_t *eh, char *prefix, char *buf)
-{
-  char *tok, *target, *msg, *redirect;
+  pack = prc_pack_alloca(len);
 
-  tok = strchr(buf, ' ');
-  if (!tok) {
-    term_printf("%s", "privmsg(): no tok1");
-    return;
-  }
-  *tok = '\0';
+  bmsg.d.len = prc_pack_msg(pack, &pmsg, buf, len);
+  bmsg.d.ptr = pack;
 
-  target = buf;
+  prc_handler_cmd_run(&pmsg, &bmsg);
+  //prc_handler_plugin_run(pmsg, &bmsg);
 
-  if (*(tok + 1) == ':')
-    msg = tok + 2;
-  else {
-    term_printf("privmsg(): no msg: [%s] [%s] [%s]", prefix, target, tok + 1);
-    return;
-  }
-
-  redirect = strchr(msg, '>');
-  if (redirect)
-    *redirect = '\0';
-
-  {
-    char *d1, *d2, *tok1;
-    d1 = strchr(msg + 1, '[');
-    if (d1) {
-      d2 = strchr(d1 + 1, ']');
-      if (!d2) {
-        dll_enq(eh->wq, prc_msg("PRIVMSG", target, ":[syntax error]", NULL));
-        return;
-      }
-
-      tok = d1 + 1;
-
-      while (tok1 != d2) {
-
-        tok1 = memchr(tok, ',', d2 - tok);
-        if (!tok1)
-          tok1 = d2;
-
-        {
-          char *dup;
-          dup = strdup(msg);
-          memcpy(dup + (d1 - msg), tok, tok1 - tok);
-          strcpy(dup + (d1 - msg) + (tok1 - tok), d2 + 1);
-
-          plugin_switch(prefix, target, dup, dup + 1);
-          free(dup);
-        } /* ... */
-
-        tok = tok1 + 1;
-      }
-    }
-    else
-      plugin_switch(prefix, target, msg, msg + 1);
-
-    handler_pump_plugin_wq(eh, redirect, prefix);
-
-    tok = d2 + 1;
-  } /* ... */
-}
-
-void
-handler_pump_plugin_wq(event_handler_t *eh, char *redirect, char *prefix)
-{
-  prc_plugin_msg_t *pmsg;
-
-  while ((pmsg = dll_pop(plugin_wq)) != NULL) {
-
-    /* targeting ourselves is probably invalid, let's change that */
-    /* HACK: real nick needs to go here */
-    if (prefix && strcmp(pmsg->target, "buhmin") == 0)
-      pmsg->target = prc_prefix_parse(prefix, NICK);
-
-    if (redirect && *(redirect + 1) == '>')
-      dll_enq(eh->wq, prc_msg3("%s %s :%s\r\n", pmsg->cmd, redirect + 2,
-                               pmsg->buf));
-    else if (redirect)
-      dll_enq(eh->wq, prc_msg3("%s %s :%s: %s\r\n", pmsg->cmd, pmsg->target,
-                               redirect + 1, pmsg->buf));
-    else
-      dll_enq(eh->wq, prc_msg(pmsg->cmd, pmsg->target, ":", pmsg->buf, NULL));
-
-    free(pmsg->buf);
-    free(pmsg);
-  }
+  return 0;
 }

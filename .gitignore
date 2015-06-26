@@ -19,7 +19,7 @@
 .\#*
 
 # binary
-prc
+/src/prc
 a.out
 
 # automake
