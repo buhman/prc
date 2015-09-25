@@ -22,10 +22,13 @@ prc_handler_subscribe_cmd(event_handler *eh, const char *command, const char *ta
 static inline void
 prc_handler_cmd_run(prc_msg_t *pmsg, bb_message *bmsg)
 {
+  int ret;
   hash_iter_t iter;
   prc_handler_t *handler;
 
-  hash_iter(&command_ht, pmsg->command, &iter);
+  ret = hash_iter(&command_ht, pmsg->command, &iter);
+  if (ret < 0)
+    return;
 
   while ((handler = hash_next(&iter)) != NULL) {
     bmsg->target = handler->target;

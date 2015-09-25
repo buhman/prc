@@ -7,6 +7,7 @@
 
 #include "method.h"
 #include "proto.h"
+#include "handler.h"
 
 static method_map_t methods[] = {
   {"connect", &prc_method_connect},
@@ -48,6 +49,7 @@ int
 prc_method_subscribe_cmd(event_handler *eh, bb_message *msg)
 {
   fprintf(stderr, "subscribe\n");
+  prc_handler_subscribe_cmd(eh, msg->data, msg->sender);
 
   return 0;
 }
