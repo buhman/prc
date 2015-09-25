@@ -138,7 +138,7 @@ vote_cmd(dll_t *wq, char *prefix, char *target, char *tok)
     }
   }
 
-  vote = calloc(1, sizeof(poll_ht_t));
+  vote = calloc(1, sizeof(vote_ht_t));
   vote->nick = strdup(nick);
   vote->key = strdup(ptr + 1);
 

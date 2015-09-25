@@ -213,8 +213,6 @@ handler_privmsg(event_handler_t *eh, char *prefix, char *buf)
       plugin_switch(prefix, target, msg, msg + 1);
 
     handler_pump_plugin_wq(eh, redirect, prefix);
-
-    tok = d2 + 1;
   } /* ... */
 }
 

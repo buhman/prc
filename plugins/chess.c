@@ -117,6 +117,7 @@ move_cmd(dll_t *wq, char *prefix, char* target, char *args)
   }
 
  invalid:
+  free(pos);
   dll_enq(wq, prc_msg2("PRIVMSG", target, "[invalid]"));
 }
 
