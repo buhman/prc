@@ -20,6 +20,7 @@
 
 # binary
 /src/prc
+/src/prcc
 a.out
 
 # automake

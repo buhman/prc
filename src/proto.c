@@ -87,7 +87,7 @@ prc_proto_read_cb(event_handler *eh, void *buf, size_t len)
       ibuf = buf;
 
     *(ibuf + blen) = '\0';
-    prc_handler(eh, ibuf, blen);
+    prc_handler(eh, ibuf, blen + 1);
 
     buf = ptr + 2;
   }

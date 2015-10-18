@@ -5,6 +5,8 @@
 #include "handler.h"
 #include "proto.h"
 
+#include <stdio.h>
+
 static hash_table_t command_ht = {0};
 
 void
@@ -16,7 +18,11 @@ prc_handler_subscribe_cmd(event_handler *eh, const char *command, const char *ta
   handler->target = strdup(target);
   handler->eh = eh;
 
+  hash_dump(&command_ht);
+
   hash_put(&command_ht, command, handler);
+
+  hash_dump(&command_ht);
 }
 
 static inline void
@@ -27,6 +33,7 @@ prc_handler_cmd_run(prc_msg_t *pmsg, bb_message *bmsg)
   prc_handler_t *handler;
 
   ret = hash_iter(&command_ht, pmsg->command, &iter);
+  printf("%s; iter ret: %d\n", pmsg->command, ret);
   if (ret < 0)
     return;
 
